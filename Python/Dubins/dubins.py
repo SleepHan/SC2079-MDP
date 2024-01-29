@@ -1,4 +1,5 @@
 import numpy as np
+from map import GridMap
 
 def ortho(vect2d):
     """Computes an orthogonal vector to the one given"""
@@ -88,7 +89,7 @@ class Dubins:
             options.sort(key=lambda x: x[0])
         return options
 
-    def dubins_path(self, start, end):
+    def dubins_path(self, start, end, map):
         """
         Computes all the possible Dubin's path and returns the sequence of
         points representing the shortest option.
@@ -109,9 +110,14 @@ class Dubins:
         In the form of a (2xn) numpy array.
 
         """
-        options = self.all_options(start, end)
-        path_length, dubins_path, straight = min(options, key=lambda x: x[0])
-        return [path_length, dubins_path, self.generate_points(start, end, dubins_path, straight)]
+        options = self.all_options(start, end, True)
+
+        for op in options:
+            path_length, dubins_path, straight = op
+            pathPoints = self.generate_points(start, end, dubins_path, straight)
+
+            if map.validMove(pathPoints): return [path_length, dubins_path, pathPoints]
+                
 
     def generate_points(self, start, end, dubins_path, straight):
         """
