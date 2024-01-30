@@ -15,8 +15,8 @@ class GridMap:
 
     
     # Updates map with any new walls from added obstacle
-    def updateWalls(self, obstacle):
-        ax, ay = obstacle[:2]
+    def updateWalls(self, newObstacle):
+        ax, ay = newObstacle[:2]
 
         # Check if new obstacle near to boundary
         # X-axis
@@ -27,6 +27,19 @@ class GridMap:
         if ay <= 2: self.setWall([ax, y] for y in range(ay))
         elif ay >= self.dimensions[1]-3: self.setWall([ax, y] for y in range(ay+1, self.dimensions[1]))
 
+        # Check if space in between obstacles are safe to move through ()
+        for obstacle in self.obstacles:
+            # X-axis
+            if obstacle[0] == ax and abs(obstacle[1] - ay) < 3:
+                if obstacle[1] > ay: self.setWall([ax, y] for y in range(ay+1, obstacle[1]))
+                else: self.setWall([ax, y] for y in range(obstacle[1]+1, ay))
+
+            # Y-axis
+            if obstacle[1] == ay and abs(obstacle[0] - ax) < 3:
+                if obstacle[0] > ax: self.setWall([x, ay] for x in range(ax+1, obstacle[0]))
+                else: self.setWall([x, ay] for x in range(obstacle[0]+1, ax))
+
+
 
     # Sets wall on grid map
     def setWall(self, wall):
@@ -35,6 +48,7 @@ class GridMap:
             self.gridMap[ay][ax] = 'X'
 
 
+    # Checks if pathing is a valid move
     def validMove(self, path):
         for point in path:
             ax, ay = point[:2]
@@ -47,6 +61,7 @@ class GridMap:
         
         return True
     
+
     def printGrid(self):
-        for y in self.gridMap:
+        for y in self.gridMap[::-1]:
             print(y)
