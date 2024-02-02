@@ -117,6 +117,8 @@ class Dubins:
             pathPoints = self.generate_points(start, end, dubins_path, straight)
 
             if map.validMove(pathPoints): return [path_length, dubins_path, pathPoints]
+
+        return float('inf')
                 
 
     def generate_points(self, start, end, dubins_path, straight):
