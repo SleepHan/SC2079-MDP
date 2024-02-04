@@ -59,11 +59,12 @@ class TSP:
     # Calculate the position of RC after backward movement
     def backward(self, pos):
         ax, ay, robOrient = pos
+        backVal = 2
 
-        if robOrient == directions['North']: ay -= .5
-        elif robOrient == directions['East']: ax -= .5
-        elif robOrient == directions['South']: ay += .5
-        else: ax += .5
+        if robOrient == directions['North']: ay -= backVal
+        elif robOrient == directions['East']: ax -= backVal
+        elif robOrient == directions['South']: ay += backVal
+        else: ax += backVal
 
         return (ax, ay, robOrient)
 
@@ -73,13 +74,15 @@ class TSP:
         local_planner = Dubins(turnRad, step)
 
         for start in self.positions:
+            origin = start
             paths = []
     
+            # If not initial position, assume that RC will reverse by 0.5 grid before moving
             if start != self.initPosition:
                 start = self.backward(start)
 
             for dst in self.positions:
-                if dst == self.initPosition or start == dst:
+                if dst == self.initPosition or origin == dst:
                     paths.append(float('inf'))
 
                 else:
@@ -87,7 +90,7 @@ class TSP:
                     pathing = local_planner.dubins_path(start, dst, self.map)
                     paths.append(pathing)
 
-            if start != self.initPosition:
+            if origin != self.initPosition:
                 finalPos0 = local_planner.dubins_path(start, finalPositions[0], self.map)
                 finalPos1 = local_planner.dubins_path(start, finalPositions[1], self.map)
 
@@ -122,7 +125,6 @@ class TSP:
         for i in range(1, len):
             startNode = seq[i-1]
             endNode = seq[i]
-            print(self.dubinsPath[startNode][endNode])
             pathing = self.dubinsPath[startNode][endNode][2]
             plt.plot(pathing[:, 0], pathing[:, -1])
 
@@ -149,11 +151,9 @@ class TSP:
 
     # Random values for testing purposes 
     def testObstacles(self):
-        obstacleList = [(11, 9, 'S'),
-                        (7, 15, 'S'),
+        obstacleList = [(11, 10, 'S'),
                         (6, 7, 'E'),
-                        (14, 14, 'E'),
-                        (1, 14, 'E')]
+                        (7, 15, 'S')]
 
         initPosition = (2, 2, directions['North'])
 
@@ -164,6 +164,7 @@ class TSP:
             self.positions.append(self.expectedPos(obs))
 
         self.map = GridMap([20, 20])
+        self.map.setOrigin(initPosition)
         for ob in obstacleList:
             self.map.setObstacles(ob)
 

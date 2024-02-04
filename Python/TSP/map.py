@@ -7,6 +7,11 @@ class GridMap:
         self.gridMap = [['.' for _ in range(dimensions[0])] for _ in range(dimensions[1])]
         self.obstacles = []
 
+
+    def setOrigin(self, initPosition):
+        self.gridMap[initPosition[1]][initPosition[0]] = 'O'
+        
+
     # Sets obstacles on the map
     def setObstacles(self, obstacle):
         self.gridMap[obstacle[1]][obstacle[0]] = obstacle[2]

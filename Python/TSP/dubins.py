@@ -113,11 +113,11 @@ class Dubins:
         options = self.all_options(start, end, True)
 
         for op in options:
-            path_length, dubins_path, straight = op
+            path_length, dubins_path, straight, config = op
             pathPoints = self.generate_points(start, end, dubins_path, straight)
 
             if path_length == float('inf'): continue
-            elif map.validMove(pathPoints): return [path_length, dubins_path, pathPoints]
+            elif map.validMove(pathPoints): return [path_length, dubins_path, pathPoints, config]
 
         return float('inf')
                 
@@ -190,7 +190,7 @@ class Dubins:
         beta_2 = (end[2]-alpha)%(2*np.pi)
         beta_0 = (alpha-start[2])%(2*np.pi)
         total_len = self.radius*(beta_2+beta_0)+straight_dist
-        return (total_len, (beta_0, beta_2, straight_dist), True)
+        return (total_len, (beta_0, beta_2, straight_dist), True, 'lsl')
 
     def rsr(self, start, end, center_0, center_2):
         """
@@ -228,7 +228,7 @@ class Dubins:
         beta_2 = (-end[2]+alpha)%(2*np.pi)
         beta_0 = (-alpha+start[2])%(2*np.pi)
         total_len = self.radius*(beta_2+beta_0)+straight_dist
-        return (total_len, (-beta_0, -beta_2, straight_dist), True)
+        return (total_len, (-beta_0, -beta_2, straight_dist), True, 'rsr')
 
     def rsl(self, start, end, center_0, center_2):
         """
@@ -268,13 +268,13 @@ class Dubins:
         psia = np.arctan2(median_point[1], median_point[0])
         half_intercenter = np.linalg.norm(median_point)
         if half_intercenter < self.radius:
-            return (float('inf'), (0, 0, 0), True)
+            return (float('inf'), (0, 0, 0), True, 'rsl')
         alpha = np.arccos(self.radius/half_intercenter)
         beta_0 = -(psia+alpha-start[2]-np.pi/2)%(2*np.pi)
         beta_2 = (np.pi+end[2]-np.pi/2-alpha-psia)%(2*np.pi)
         straight_dist = 2*(half_intercenter**2-self.radius**2)**.5
         total_len = self.radius*(beta_2+beta_0)+straight_dist
-        return (total_len, (-beta_0, beta_2, straight_dist), True)
+        return (total_len, (-beta_0, beta_2, straight_dist), True, 'rsl')
 
     def lsr(self, start, end, center_0, center_2):
         """
@@ -314,13 +314,13 @@ class Dubins:
         psia = np.arctan2(median_point[1], median_point[0])
         half_intercenter = np.linalg.norm(median_point)
         if half_intercenter < self.radius:
-            return (float('inf'), (0, 0, 0), True)
+            return (float('inf'), (0, 0, 0), True, 'lsr')
         alpha = np.arccos(self.radius/half_intercenter)
         beta_0 = (psia-alpha-start[2]+np.pi/2)%(2*np.pi)
         beta_2 = (.5*np.pi-end[2]-alpha+psia)%(2*np.pi)
         straight_dist = 2*(half_intercenter**2-self.radius**2)**.5
         total_len = self.radius*(beta_2+beta_0)+straight_dist
-        return (total_len, (beta_0, -beta_2, straight_dist), True)
+        return (total_len, (beta_0, -beta_2, straight_dist), True, 'lsr')
 
     def lrl(self, start, end, center_0, center_2):
         """
@@ -355,14 +355,14 @@ class Dubins:
         intercenter = (center_2 - center_0)/2
         psia = np.arctan2(intercenter[1], intercenter[0])
         if 2*self.radius < dist_intercenter > 4*self.radius:
-            return (float('inf'), (0, 0, 0), False)
+            return (float('inf'), (0, 0, 0), False, 'lrl')
         gamma = 2*np.arcsin(dist_intercenter/(4*self.radius))
         beta_0 = (psia-start[2]+np.pi/2+(np.pi-gamma)/2)%(2*np.pi)
         beta_1 = (-psia+np.pi/2+end[2]+(np.pi-gamma)/2)%(2*np.pi)
         total_len = (2*np.pi-gamma+abs(beta_0)+abs(beta_1))*self.radius
         return (total_len,
                 (beta_0, beta_1, 2*np.pi-gamma),
-                False)
+                False, 'lrl')
 
     def rlr(self, start, end, center_0, center_2):
         """
@@ -397,14 +397,14 @@ class Dubins:
         intercenter = (center_2 - center_0)/2
         psia = np.arctan2(intercenter[1], intercenter[0])
         if 2*self.radius < dist_intercenter > 4*self.radius:
-            return (float('inf'), (0, 0, 0), False)
+            return (float('inf'), (0, 0, 0), False, 'rlr')
         gamma = 2*np.arcsin(dist_intercenter/(4*self.radius))
         beta_0 = -((-psia+(start[2]+np.pi/2)+(np.pi-gamma)/2)%(2*np.pi))
         beta_1 = -((psia+np.pi/2-end[2]+(np.pi-gamma)/2)%(2*np.pi))
         total_len = (2*np.pi-gamma+abs(beta_0)+abs(beta_1))*self.radius
         return (total_len,
                 (beta_0, beta_1, 2*np.pi-gamma),
-                False)
+                False, 'rlr')
 
 
     def find_center(self, point, side):
