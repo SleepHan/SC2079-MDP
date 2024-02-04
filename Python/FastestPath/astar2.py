@@ -1,8 +1,7 @@
 class Node():
-    def __init__(self, parent=None, position=None, direction=None):
+    def __init__(self, parent=None, position=None):
         self.parent = parent
         self.position = position
-        self.direction = direction  # Added direction attribute
         self.g = 0
         self.h = 0
         self.f = 0
@@ -36,16 +35,13 @@ def astar(maze, start, end):
             path = []
             current = current_node
             while current is not None:
-                path.append((current.position, current.direction))
+                path.append(current.position)
                 current = current.parent
             return path[::-1]
 
         children = []
-        for new_position in [(0, -1, 'W'), (0, 1, 'E'), (-1, 0, 'N'), (1, 0, 'S')]:
-            node_position = (
-                current_node.position[0] + new_position[0],
-                current_node.position[1] + new_position[1],
-            )
+        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
 
             if (
                 node_position[0] > (len(maze) - 1)
@@ -56,10 +52,9 @@ def astar(maze, start, end):
                 continue
 
             if maze[node_position[0]][node_position[1]] != 0:
-                if new_position[2] != maze[node_position[0]][node_position[1]]:
-                    continue
+                continue
 
-            new_node = Node(current_node, node_position, new_position[2])
+            new_node = Node(current_node, node_position)
             children.append(new_node)
 
         for child in children:
@@ -83,14 +78,20 @@ def astar(maze, start, end):
 def visualize_path(maze, path):
     for row in range(len(maze)):
         for col in range(len(maze[row])):
-            if (row, col) == path[0][0]:
+            if (row, col) == path[0]:
                 print("S", end=" ")  # Start
-            elif (row, col) == path[-1][0]:
+            elif (row, col) == path[-1]:
                 print("E", end=" ")  # End
-            elif (row, col) in [p[0] for p in path]:
+            elif (row, col) in path:
                 print("*", end=" ")  # Path
-            elif maze[row][col] in ["N", "S", "W", "E"]:
-                print(maze[row][col], end=" ")  # Obstacle direction
+            elif maze[row][col] == "N":
+                print("n", end=" ")  # North obstacle
+            elif maze[row][col] == "S":
+                print("d", end=" ")  # South obstacle
+            elif maze[row][col] == "W":
+                print("w", end=" ")  # West obstacle
+            elif maze[row][col] == "E":
+                print("e", end=" ")  # East obstacle
             else:
                 print(".", end=" ")  # Open space
         print()
@@ -100,18 +101,18 @@ def main():
     maze = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, "W", 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, "N", 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, "N", 0, 0, 0, "S", 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, "W", 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ]
 
-    start = (0, 0)
-    end = (7, 6)
+    start = (5, 0)
+    end = (5, 9)
 
     path = astar(maze, start, end)
     visualize_path(maze, path)
