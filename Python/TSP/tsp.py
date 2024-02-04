@@ -143,6 +143,9 @@ class TSP:
             for node in self.distance:
                 print(node)
 
+        elif num == 3:
+            self.map.printGrid()
+
 
     # Random values for testing purposes 
     def testObstacles(self):
