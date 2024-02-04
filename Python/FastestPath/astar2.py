@@ -1,3 +1,25 @@
+"""
+fastest car task using visual recognition 
+
+Map : 200 by 200
+
+Robot has a footprint of 20cm x 21cm
+
+The best position is to have the camera 20cm away from the obstacle to recognize an image.
+
+obstacle will be placed at the centre of the carpark
+- obstacle 1 : 10 x 10
+- obstacle 2 : 60 x 10
+
+parking barrier will be 60cm wide
+
+wall/barrier is approximately 50cm away from obstacle 2
+
+right / left arrow only
+
+Time out for this task is 3min.
+"""
+
 class Node():
     def __init__(self, parent=None, position=None):
         self.parent = parent
