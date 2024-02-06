@@ -77,7 +77,7 @@ class TSP:
             origin = start
             paths = []
     
-            # If not initial position, assume that RC will reverse by 0.5 grid before moving
+            # If not initial position, assume that RC will reverse by 2 grids before moving
             if start != self.initPosition:
                 start = self.backward(start)
 
@@ -88,6 +88,18 @@ class TSP:
                 else:
                     # Tuple: (Total_Dist, Specific_Dist, Pathing)
                     pathing = local_planner.dubins_path(start, dst, self.map)
+
+                    # Distance stuff
+                    # if not isinstance(pathing, float):
+                    #     print(pathing[3])
+                    #     print(pathing[1])
+
+                    #     if pathing[3] == 'rlr' or pathing[3] == 'lrl':
+                    #         print(2.5*(abs(pathing[1][0]) + abs(pathing[1][1]) + abs(pathing[1][2])))
+                    #     else:
+                    #         print(2.5*(abs(pathing[1][0]) + abs(pathing[1][1])) + pathing[1][2])
+                    #     print(pathing[0])
+                    
                     paths.append(pathing)
 
             if origin != self.initPosition:
@@ -117,22 +129,46 @@ class TSP:
         return (permutation, distance)
 
 
+    # Displays paths selected to complete Hamiltonian cycle
     def displayPath(self, seq, len):
+        index = [(i, (i+1)%len) for i in range(len)]
+
         plt.grid()
         plt.xticks(np.arange(0, 21, 1.0))
         plt.yticks(np.arange(0, 21, 1.0))
 
-        for i in range(1, len):
-            startNode = seq[i-1]
-            endNode = seq[i]
+        for start, end in index:
+            startNode = seq[start]
+            endNode = seq[end]
             pathing = self.dubinsPath[startNode][endNode][2]
             plt.plot(pathing[:, 0], pathing[:, -1])
 
-        finalStartNode = seq[-1]
-        pathing = self.dubinsPath[finalStartNode][0][2]
-        plt.plot(pathing[:, 0], pathing[:, -1])
-
         plt.show()
+
+
+    # Gives the details of each path selected for the Hamiltonian cycle
+    def printPathInfo(self, seq, len):
+        index = [(i, (i+1)%len) for i in range(len)]
+
+        for start, end in index:
+            startNode = seq[start]
+            endNode = seq[end]
+            dubPath = self.dubinsPath[startNode][endNode][1]
+            dist = self.dubinsPath[startNode][endNode][0]
+            config = self.dubinsPath[startNode][endNode][3]
+
+            zipped = [(config[0], dubPath[0]), (config[1], dubPath[2]), (config[2], dubPath[1])]
+            print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
+            
+            for segType, length in zipped:
+                if segType == 'l':
+                    print('Left: {} rad, {}'.format(length, 2.5*(abs(length))))
+                elif segType == 'r':
+                    print('Right: {} rad, {}'.format(length, 2.5*(abs(length))))
+                else:
+                    print('Straight: {}'.format(length))
+
+            print('{}\n'.format(dist))
 
 
     # Prints the desired info
