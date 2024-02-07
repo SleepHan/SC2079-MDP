@@ -310,22 +310,32 @@ class AStarPathFinder:
 
         if first is None:
             second_node_position = second.get_position()
-            if second_node_position[Position.X] == current_node.get_position()[Position.X]:
-                if second_node_position[Position.Y] > current_node.get_position()[Position.Y]:
+            """This condition checks whether the X coordinate of second_node_position is equal to the X coordinate of current_node. 
+            If they are the same, it means the nodes are aligned vertically"""
+            if second_node_position[Position.X] == current_node.get_position()[Position.X]: # Check if the X coordinates are the same
+                """this condition checks whether the Y coordinate of second_node_position is greater than the Y coordinate of current_node. 
+                If true, it means second_node_position is positioned above current_node"""
+                if second_node_position[Position.Y] > current_node.get_position()[Position.Y]: # Check if second_node_position is above current_node
                     return {
                         Directions.NORTH: Directions.FORWARD,
                         Directions.EAST: Directions.LEFT,
                         Directions.SOUTH: Directions.BACKWARD,
                         Directions.WEST: Directions.RIGHT
                     }[self.direction]
+                
                 elif second_node_position[Position.Y] < current_node.get_position()[Position.Y]:
+                    """This condition checks whether the Y coordinate of second_node_position is less than the Y coordinate of current_node"""
                     return {
                         Directions.NORTH: Directions.BACKWARD,
                         Directions.EAST: Directions.RIGHT,
                         Directions.SOUTH: Directions.FORWARD,
                         Directions.WEST: Directions.LEFT
                     }[self.direction]
+                
+                """condition checks whether the Y coordinate of second_node_position is equal to the Y coordinate of current_node. If true, it means second_node_position is at the same Y coordinate as current_node"""
             elif second_node_position[Position.Y] == current_node.get_position()[Position.Y]:
+                """If second_node_position[Position.X] > current_node.get_position()[Position.X]
+                means second_node_position is to the right of current_node."""
                 if second_node_position[Position.X] > current_node.get_position()[Position.X]:
                     return {
                         Directions.NORTH: Directions.LEFT,
@@ -334,6 +344,8 @@ class AStarPathFinder:
                         Directions.WEST: Directions.FORWARD
                     }[self.direction]
                 else:
+                    """If second_node_position[Position.X] <= current_node.get_position()[Position.X]
+                    means second_node_position is to the left of or at the same X coordinate as current_node."""
                     return {
                         Directions.NORTH: Directions.RIGHT,
                         Directions.EAST: Directions.FORWARD,
