@@ -163,17 +163,17 @@ class TSP:
         plt.plot(wx, wy, '-k')
 
 
-        for i in range(4):
+        for i in range(5):
             sx.append(i)
             sy.append(0)
-        for i in range(4):
+        for i in range(5):
             sx.append(0)
             sy.append(i)
-        for i in range(4):
+        for i in range(5):
             sx.append(i)
-            sy.append(3)
-        for i in range(4):
-            sx.append(3)
+            sy.append(4)
+        for i in range(5):
+            sx.append(4)
             sy.append(i)
 
         plt.plot(sx, sy, '-g')
@@ -197,7 +197,7 @@ class TSP:
                 ry.append(y)
             
                 plt.plot(rx, ry, '-r')
-                plt.pause(0.01)
+                plt.pause(0.05)
                 
         plt.show()
 
