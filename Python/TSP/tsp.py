@@ -2,6 +2,7 @@ from dubins import Dubins
 from map import GridMap
 
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 from python_tsp.exact import solve_tsp_dynamic_programming
 
@@ -26,6 +27,9 @@ robotPositions = {
 finalPositions = [(1, 1, directions['South']),
                   (1, 2, directions['West'])]
 
+
+startNode = 0
+endNode = 0
 
 class TSP:
     def __init__(self, initPosition):
@@ -126,29 +130,81 @@ class TSP:
         #     [10, 5, 3,  0]
         # ])
         # permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+        print(permutation)
+        print(distance)
         return (permutation, distance)
 
 
     # Displays paths selected to complete Hamiltonian cycle
-    def displayPath(self, seq, len):
-        index = [(i, (i+1)%len) for i in range(len)]
+    def displayPath(self, seq, num):
+        index = [(i, (i+1)%num) for i in range(num)]
+        rx, ry = [], []
+        wx, wy = [], []
+        sx, sy = [], []
 
-        plt.grid()
+        plt.grid(True)
+        plt.axis('equal')
         plt.xticks(np.arange(0, 21, 1.0))
         plt.yticks(np.arange(0, 21, 1.0))
+
+        for i in range(20):
+            wx.append(i)
+            wy.append(0)
+        for i in range(20):
+            wx.append(0)
+            wy.append(i)
+        for i in range(20):
+            wx.append(i)
+            wy.append(19)
+        for i in range(20):
+            wx.append(19)
+            wy.append(i)
+
+        plt.plot(wx, wy, '-k')
+
+
+        for i in range(4):
+            sx.append(i)
+            sy.append(0)
+        for i in range(4):
+            sx.append(0)
+            sy.append(i)
+        for i in range(4):
+            sx.append(i)
+            sy.append(3)
+        for i in range(4):
+            sx.append(3)
+            sy.append(i)
+
+        plt.plot(sx, sy, '-g')
+
+
+        for obstacle in self.obstacleList:
+            ox, oy = obstacle[:2]
+            if (obstacle[2] == 'N'): plt.plot(ox, oy, '^b')
+            elif (obstacle[2] == 'S'): plt.plot(ox, oy, 'vb')
+            elif (obstacle[2] == 'E'): plt.plot(ox, oy, '>b')
+            else: plt.plot(ox, oy, '<b')
+
 
         for start, end in index:
             startNode = seq[start]
             endNode = seq[end]
             pathing = self.dubinsPath[startNode][endNode][2]
-            plt.plot(pathing[:, 0], pathing[:, -1])
 
+            for x,y in pathing:
+                rx.append(x)
+                ry.append(y)
+            
+                plt.plot(rx, ry, '-r')
+                plt.pause(0.01)
+                
         plt.show()
 
 
     # Gives the details of each path selected for the Hamiltonian cycle
-    def printPathInfo(self, seq, len):
-        index = [(i, (i+1)%len) for i in range(len)]
+    def printPathInfo(self, seq, num):
+        index = [(i, (i+1)%num) for i in range(num)]
 
         for start, end in index:
             startNode = seq[start]
@@ -187,20 +243,22 @@ class TSP:
 
     # Random values for testing purposes 
     def testObstacles(self):
-        obstacleList = [(11, 10, 'S'),
-                        (6, 7, 'E'),
-                        (7, 15, 'S')]
+        self.obstacleList = [(2, 17, 'S'),
+                             (17, 13, 'W'),
+                             (14, 4, 'N'),
+                             (8, 5, 'E'),
+                             (5, 12, 'N')]
 
         initPosition = (2, 2, directions['North'])
 
         # First element represents the inital position the RC will be in
         self.positions.append(initPosition)
 
-        for obs in obstacleList:
+        for obs in self.obstacleList:
             self.positions.append(self.expectedPos(obs))
 
         self.map = GridMap([20, 20])
         self.map.setOrigin(initPosition)
-        for ob in obstacleList:
+        for ob in self.obstacleList:
             self.map.setObstacles(ob)
 

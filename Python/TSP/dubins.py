@@ -110,6 +110,8 @@ class Dubins:
         In the form of a (2xn) numpy array.
 
         """
+        print('Start: {}'.format(start))
+        print('End: {}'.format(end))
         options = self.all_options(start, end, True)
 
         for op in options:
@@ -119,6 +121,7 @@ class Dubins:
             if path_length == float('inf'): continue
             elif map.validMove(pathPoints): return [path_length, dubins_path, pathPoints, config]
 
+        print()
         return float('inf')
                 
 

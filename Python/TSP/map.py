@@ -55,10 +55,18 @@ class GridMap:
             ax = math.ceil(ax)
             ay = math.ceil(ay)
 
-            if ax <= 0 or ax >= 19: return False
-            if ay <= 0 or ay >= 19: return False
-            if self.gridMap[ay][ax] != '.': return False
+            if ax <= 0 or ax >= 19: 
+                print('X Collide: [{}][{}]'.format(ax, ay))
+                return False
+            if ay <= 0 or ay >= 19: 
+                print('Y Collide: [{}][{}]'.format(ax, ay))
+                return False
+            if self.gridMap[ay][ax] not in ['.', 'O']:
+                print(self.gridMap[ay][ax]) 
+                print('Wall Collide: [{}][{}]'.format(ax, ay))
+                return False
         
+        print('VALID')
         return True
     
 
