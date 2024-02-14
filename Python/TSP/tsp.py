@@ -2,7 +2,6 @@ from dubins import Dubins
 from map import GridMap
 
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import numpy as np
 from python_tsp.exact import solve_tsp_dynamic_programming
 
@@ -73,6 +72,11 @@ class TSP:
         return (ax, ay, robOrient)
 
 
+    # Expected input for obs = (x, y, orien)
+    def addObstacle(self, obs):
+        self.positions.append(self.expectedPos(obs))
+
+
     # Calculates the shortest dubins path between each node
     def calcDubins(self, turnRad, step):
         local_planner = Dubins(turnRad, step)
@@ -92,18 +96,6 @@ class TSP:
                 else:
                     # Tuple: (Total_Dist, Specific_Dist, Pathing)
                     pathing = local_planner.dubins_path(start, dst, self.map)
-
-                    # Distance stuff
-                    # if not isinstance(pathing, float):
-                    #     print(pathing[3])
-                    #     print(pathing[1])
-
-                    #     if pathing[3] == 'rlr' or pathing[3] == 'lrl':
-                    #         print(2.5*(abs(pathing[1][0]) + abs(pathing[1][1]) + abs(pathing[1][2])))
-                    #     else:
-                    #         print(2.5*(abs(pathing[1][0]) + abs(pathing[1][1])) + pathing[1][2])
-                    #     print(pathing[0])
-                    
                     paths.append(pathing)
 
             if origin != self.initPosition:
@@ -190,6 +182,7 @@ class TSP:
         for start, end in index:
             startNode = seq[start]
             endNode = seq[end]
+            orien = self.positions[endNode][2]
             pathing = self.dubinsPath[startNode][endNode][2]
 
             for x,y in pathing:
@@ -197,7 +190,15 @@ class TSP:
                 ry.append(y)
             
                 plt.plot(rx, ry, '-r')
-                plt.pause(0.05)
+                plt.pause(0.0005)
+
+            # Print cross and arrow only at obstacles
+            if not (x <=4 and y <=4):
+                plt.plot(x, y, 'xk')
+                if orien == directions['North']: plt.arrow(x, y, 0, 1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                elif orien == directions['South']: plt.arrow(x, y, 0, -1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                elif orien == directions['East']: plt.arrow(x, y, 1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
+                else: plt.arrow(x, y, -1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
                 
         plt.show()
 
@@ -255,7 +256,7 @@ class TSP:
         self.positions.append(initPosition)
 
         for obs in self.obstacleList:
-            self.positions.append(self.expectedPos(obs))
+            self.addObstacle(obs)
 
         self.map = GridMap([20, 20])
         self.map.setOrigin(initPosition)

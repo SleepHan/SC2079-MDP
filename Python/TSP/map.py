@@ -67,6 +67,7 @@ class GridMap:
                 return False
         
         print('VALID')
+        print()
         return True
     
 
