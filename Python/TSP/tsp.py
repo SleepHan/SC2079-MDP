@@ -250,16 +250,18 @@ class TSP:
                              (8, 5, 'E'),
                              (5, 12, 'N')]
 
-        initPosition = (2, 2, directions['North'])
+        self.initPosition = (2, 2, directions['North'])
 
         # First element represents the inital position the RC will be in
-        self.positions.append(initPosition)
+        self.positions.append(self.initPosition)
 
         for obs in self.obstacleList:
             self.addObstacle(obs)
 
+        print(self.positions)
+
         self.map = GridMap([20, 20])
-        self.map.setOrigin(initPosition)
+        self.map.setOrigin(self.initPosition)
         for ob in self.obstacleList:
             self.map.setObstacles(ob)
 
