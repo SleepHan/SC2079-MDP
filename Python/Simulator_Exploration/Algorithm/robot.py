@@ -7,19 +7,26 @@ from fastest_path_algo import FastestPath
 from map import *
 from path_find_algo import *
 from setup_logger import logger
+import config
 
 
 class Robot:
     def __init__(self, simulator):
         self.simulator = simulator
-        self.map: Map = Map()
-        self.y: int = config.map_size["height"] - 2
-        self.x: int = 1
-        #  self.y: int = 6  # robot initial position
-        #  self.x: int = 2
+        self.map = Map()
+        
+        """ TESTING EXPLORATION"""
+        # self.y: int = config.map_size["height"] - 2
+        # self.x: int = 1
+        # self.bearing: Bearing = Bearing.NORTH
+        
+        """ TESTING FASTEST CAR"""
+        self.y: int = 6  # robot initial position
+        self.x: int = 2
+        self.bearing: Bearing = Bearing.EAST
+        
         self.consecutive_forward: int = 1
-        self.bearing: Bearing = Bearing.NORTH
-        #  self.bearing: Bearing = Bearing.EAST
+        
         self.update_map: bool = True
         self.robot_rpi_temp_movement: List[str] = []
         self.prev_loc = (1, 18, Bearing.NORTH)  # (x, y, Bearing)
@@ -105,6 +112,8 @@ class Robot:
         else:
             return False
 
+
+    
     # check obstacles
     def north_is_free(self):
         for i in range(3):
@@ -253,7 +262,7 @@ class Robot:
         amount = 2  # vertical distance for the first obstacle
 
         for rounds in range(0, 2):
-            #  start = [6, 2, 11]
+            start = [6, 2, 11]
             if rounds > 0:
                 amount = 5  # since second obstacle is bigger we move it vertically by a higher distance
 
@@ -264,15 +273,22 @@ class Robot:
             else:
                 # second sensor reading
                 sensor_reading = 5
-            #  self.simulator.robot_movement.append(Movement.RIGHT)
+                self.simulator.robot_movement.append(Movement.RIGHT)
 
             while sensor_reading > 2:  # while distance is greater than 20 cm
+                # # get sensor reading
+                # self.simulator.robot_movement.append(Movement.FORWARD)
+                # self.robot_rpi_temp_movement.append(Movement.FORWARD)
+                # wasd_str.append("w")
+                # horiz_distance += 1
+                # sensor_reading -= 1  # measure sensor reading
                 # get sensor reading
-                self.simulator.robot_movement.append(Movement.FORWARD)
-                self.robot_rpi_temp_movement.append(Movement.FORWARD)
-                wasd_str.append("w")
-                horiz_distance += 1
-                sensor_reading -= 1  # measure sensor reading
+                if self.check_front():  # Check if it's safe to move forward
+                    self.simulator.robot_movement.append(Movement.FORWARD)
+                    self.robot_rpi_temp_movement.append(Movement.FORWARD)
+                    wasd_str.append("w")
+                    horiz_distance += 1
+                    sensor_reading -= 1  # measure sensor reading
 
             wasd_str.append("x")
             # take picture and start image recog
@@ -403,6 +419,45 @@ class Robot:
 
         self.displayMovement()
         print(wasd_str)  # wasd str to send to rpi
+        
+    def check_front(self):
+        # Modify the check_front method to include obstacle checking for pink blocks
+        if (
+            self.bearing == Bearing.NORTH
+            and self.validate(0, -1)
+            and self.north_is_free()
+            and self.not_on_pink_block(0, -1)
+        ):
+            return True
+        elif (
+            self.bearing == Bearing.EAST
+            and self.validate(1, 0)
+            and self.east_is_free()
+            and self.not_on_pink_block(1, 0)
+        ):
+            return True
+        elif (
+            self.bearing == Bearing.SOUTH
+            and self.validate(0, 1)
+            and self.south_is_free()
+            and self.not_on_pink_block(0, 1)
+        ):
+            return True
+        elif (
+            self.bearing == Bearing.WEST
+            and self.validate(-1, 0)
+            and self.west_is_free()
+            and self.not_on_pink_block(-1, 0)
+        ):
+            return True
+        else:
+            return False
+
+    def not_on_pink_block(self, x_offset, y_offset):
+        # Check if the next move won't hit a pink block
+        next_x = self.x + x_offset
+        next_y = self.y + y_offset
+        return map_sim[next_y][next_x] not in [10, 11, 12, 13]
 
     ########################################################################################
 
@@ -510,3 +565,6 @@ class Robot:
         self.simulator.update_map(full=True)
         # Refresh every 0.5 sec
         self.simulator.job = self.simulator.root.after(50, self.displayMovement)
+        
+    def is_valid_position(self, x, y):
+        return 0 <= x < len(map_sim[0]) and 0 <= y < len(map_sim)
