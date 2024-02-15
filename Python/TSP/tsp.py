@@ -31,7 +31,8 @@ startNode = 0
 endNode = 0
 
 class TSP:
-    def __init__(self, initPosition):
+    def __init__(self, initPosition, dimX, dimY):
+        self.dimensions = (dimX, dimY)
         self.obstacleList = []
         self.initPosition = (initPosition[0], initPosition[1], directions[initPosition[2]])
         self.positions = []
@@ -99,17 +100,25 @@ class TSP:
                     paths.append(pathing)
 
             if origin != self.initPosition:
-                finalPos0 = local_planner.dubins_path(start, finalPositions[0], self.map)
-                finalPos1 = local_planner.dubins_path(start, finalPositions[1], self.map)
+                minDist = [float('inf')]
+                for x in range(1, 2):
+                    for y in range(1, 2):
+                        for _, angle in directions.items():
+                            pathing = local_planner.dubins_path(start, (x, y, angle), self.map)
+                            if isinstance(pathing, float): continue
+                            elif pathing[0] < minDist[0]: minDist = pathing
 
-                if isinstance(finalPos0, float): paths[0] = finalPos1
-                elif isinstance(finalPos1, float): paths[0] = finalPos0
-                else: paths[0] = finalPos0 if finalPos0[0] < finalPos1[0] else finalPos1
+                paths[0] = minDist
 
             self.dubinsPath.append(paths)
 
         self.distance = [[path if isinstance(path, float) else path[0] for path in node] for node in self.dubinsPath]
 
+        if any(all(x == float('inf') for x in paths) for paths in self.distance):
+            print('No valid pathing')
+            return False
+
+        return True
 
     def calcTSP(self):
         distance_matrix = np.matrix(self.distance)
@@ -238,9 +247,6 @@ class TSP:
             for node in self.distance:
                 print(node)
 
-        elif num == 3:
-            self.map.printGrid()
-
 
     # Random values for testing purposes 
     def testObstacles(self):
@@ -249,8 +255,15 @@ class TSP:
                              (14, 4, 'N'),
                              (8, 5, 'E'),
                              (5, 12, 'N')]
+        
+        # self.obstacleList = [
+        # (10, 10, 'W'),
+        # (5, 17, 'E'),
+        # (17, 13, 'S'),
+        # (14, 4, 'W'),
+        # (8, 5, 'N'),]
 
-        self.initPosition = (2, 2, directions['North'])
+        self.initPosition = (1, 1, directions['North'])
 
         # First element represents the inital position the RC will be in
         self.positions.append(self.initPosition)
@@ -261,7 +274,6 @@ class TSP:
         print(self.positions)
 
         self.map = GridMap([20, 20])
-        self.map.setOrigin(self.initPosition)
         for ob in self.obstacleList:
             self.map.setObstacles(ob)
 

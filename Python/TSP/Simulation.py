@@ -1,12 +1,12 @@
 from tsp import TSP
 
-tsp = TSP((2, 2, 'North'))
+tsp = TSP((2, 2, 'North'), 20, 20)
 tsp.testObstacles()
 
-tsp.calcDubins(2.5, .5)
+res = tsp.calcDubins(2.5, .5)
 tsp.printInfo(2)
-tsp.printInfo(3)
 
-sequence, dist = tsp.calcTSP()
-tsp.displayPath(sequence, len(sequence))
-# tsp.printPathInfo(sequence, len(sequence))
+if res:
+    sequence, dist = tsp.calcTSP()
+    tsp.displayPath(sequence, len(sequence))
+    # tsp.printPathInfo(sequence, len(sequence))
