@@ -9,4 +9,4 @@ tsp.printInfo(2)
 if res:
     sequence, dist = tsp.calcTSP()
     tsp.displayPath(sequence, len(sequence))
-    # tsp.printPathInfo(sequence, len(sequence))
+    tsp.printPathInfo(sequence, len(sequence))

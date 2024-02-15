@@ -1,5 +1,4 @@
 from dubins import Dubins
-from map import GridMap
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -38,7 +37,6 @@ class TSP:
         self.positions = []
         self.dubinsPath = []
         self.distance = []
-        self.map = None
 
 
     # Positions RC is expected to be in to accurately capture the image of the obstacles
@@ -80,7 +78,7 @@ class TSP:
 
     # Calculates the shortest dubins path between each node
     def calcDubins(self, turnRad, step):
-        local_planner = Dubins(turnRad, step)
+        local_planner = Dubins(turnRad, step, self.obstacleList)
 
         for start in self.positions:
             origin = start
@@ -96,7 +94,7 @@ class TSP:
 
                 else:
                     # Tuple: (Total_Dist, Specific_Dist, Pathing)
-                    pathing = local_planner.dubins_path(start, dst, self.map)
+                    pathing = local_planner.dubins_path(start, dst)
                     paths.append(pathing)
 
             if origin != self.initPosition:
@@ -104,7 +102,7 @@ class TSP:
                 for x in range(1, 2):
                     for y in range(1, 2):
                         for _, angle in directions.items():
-                            pathing = local_planner.dubins_path(start, (x, y, angle), self.map)
+                            pathing = local_planner.dubins_path(start, (x, y, angle))
                             if isinstance(pathing, float): continue
                             elif pathing[0] < minDist[0]: minDist = pathing
 
@@ -133,6 +131,7 @@ class TSP:
         # permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
         print(permutation)
         print(distance)
+        print()
         return (permutation, distance)
 
 
@@ -244,8 +243,10 @@ class TSP:
                 print(node)
 
         elif num == 2:
-            for node in self.distance:
-                print(node)
+            print('Distance Matrix')
+            print(np.matrix(self.distance))
+
+        print()
 
 
     # Random values for testing purposes 
@@ -272,8 +273,4 @@ class TSP:
             self.addObstacle(obs)
 
         print(self.positions)
-
-        self.map = GridMap([20, 20])
-        for ob in self.obstacleList:
-            self.map.setObstacles(ob)
 
