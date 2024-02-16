@@ -1,5 +1,4 @@
 import numpy as np
-from map import GridMap
 
 def ortho(vect2d):
     """Computes an orthogonal vector to the one given"""
@@ -47,10 +46,36 @@ class Dubins:
     rlr
         Dubins path with a right left right trajectory.
     """
-    def __init__(self, radius, point_separation):
+    def __init__(self, radius, point_separation, obstacleList):
         assert radius > 0 and point_separation > 0
         self.radius = radius
         self.point_separation = point_separation
+        self.obstacleList = obstacleList
+
+    # Checks if pathing is a valid move
+    def validMove(self, path):
+        for point in path:
+            ax, ay = point[:2]
+
+            # Border Checking
+            if ax < 1 or ax > 18: 
+                print('X Collide: [{}][{}]'.format(ax, ay))
+                return False
+            if ay < 1 or ay > 18: 
+                print('Y Collide: [{}][{}]'.format(ax, ay))
+                return False
+            
+            # Obstacle Checking
+            for obs in self.obstacleList:
+                ox, oy, _ = obs
+                if ox - 1 <= ax <= ox + 1 and oy - 1 <= ay <= oy + 1:
+                    print('Obstacle Collide: [{}][{}]'.format(ox, oy))
+                    return False
+        
+        print('VALID')
+        print()
+        return True
+
 
     def all_options(self, start, end, sort=False):
         """
@@ -89,7 +114,7 @@ class Dubins:
             options.sort(key=lambda x: x[0])
         return options
 
-    def dubins_path(self, start, end, map):
+    def dubins_path(self, start, end):
         """
         Computes all the possible Dubin's path and returns the sequence of
         points representing the shortest option.
@@ -119,7 +144,7 @@ class Dubins:
             pathPoints = self.generate_points(start, end, dubins_path, straight)
 
             if path_length == float('inf'): print("No valid moves")
-            elif map.validMove(pathPoints): return [path_length, dubins_path, pathPoints, config]
+            elif self.validMove(pathPoints): return [path_length, dubins_path, pathPoints, config]
             else: print('Collision detection in {} config'.format(config))
 
         print()
