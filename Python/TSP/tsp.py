@@ -30,13 +30,14 @@ startNode = 0
 endNode = 0
 
 class TSP:
-    def __init__(self, initPosition, dimX, dimY):
+    def __init__(self, initPosition, dimX, dimY, turnRad):
         self.dimensions = (dimX, dimY)
         self.obstacleList = []
         self.initPosition = (initPosition[0], initPosition[1], directions[initPosition[2]])
         self.positions = []
         self.dubinsPath = []
         self.distance = []
+        self.turnRad = turnRad
 
 
     # Positions RC is expected to be in to accurately capture the image of the obstacles
@@ -77,8 +78,8 @@ class TSP:
 
 
     # Calculates the shortest dubins path between each node
-    def calcDubins(self, turnRad, step):
-        local_planner = Dubins(turnRad, step, self.obstacleList)
+    def calcDubins(self, step):
+        local_planner = Dubins(self.turnRad, step, self.obstacleList)
 
         for start in self.positions:
             origin = start
@@ -214,6 +215,7 @@ class TSP:
     # Gives the details of each path selected for the Hamiltonian cycle
     def printPathInfo(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
+        segments = []
 
         for start, end in index:
             startNode = seq[start]
@@ -224,16 +226,24 @@ class TSP:
 
             zipped = [(config[0], dubPath[0]), (config[1], dubPath[2]), (config[2], dubPath[1])]
             print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
-            
+
             for segType, length in zipped:
                 if segType == 'l':
-                    print('Left: {} rad, {}'.format(length, 2.5*(abs(length))))
+                    print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segments.append(['L', length, self.turnRad*(abs(length))*10])
                 elif segType == 'r':
-                    print('Right: {} rad, {}'.format(length, 2.5*(abs(length))))
+                    print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segments.append(['R', length, self.turnRad*(abs(length))*10])
                 else:
                     print('Straight: {}'.format(length))
+                    print('Actual Length: {}\n'.format(length*10))
+                    segments.append(['S', length, length*10])
 
-            print('{}\n'.format(dist))
+            print('\nFull Distance; {}\n'.format(dist))
+        
+        return segments
 
 
     # Prints the desired info
@@ -249,20 +259,18 @@ class TSP:
         print()
 
 
-    # Random values for testing purposes 
-    def testObstacles(self):
-        self.obstacleList = [(2, 17, 'S'),
-                             (17, 13, 'W'),
-                             (14, 4, 'N'),
-                             (8, 5, 'E'),
-                             (5, 12, 'N')]
-        
-        # self.obstacleList = [
-        # (10, 10, 'W'),
-        # (5, 17, 'E'),
-        # (17, 13, 'S'),
-        # (14, 4, 'W'),
-        # (8, 5, 'N'),]
+    # Dummy values for testing purposes 
+    def testObstacles(self, choice=0):
+        if choice == 1:
+            self.obstacleList = [(2, 17, 'S'), (17, 13, 'W'), (14, 4, 'N'), (8, 5, 'E'), (5, 12, 'N')]
+        elif choice == 2:
+            self.obstacleList = [(2, 18, 'S'), (6, 12, 'N'), (8, 5, 'E'), (15, 16, 'S'), (16, 1, 'W')]
+        elif choice == 3:
+            self.obstacleList = [(1, 18, 'S'), (6, 12, 'N'), (10, 7, 'E'), (15, 16, 'S'), (19, 9, 'W'), (13, 2, 'W')]
+        elif choice == 4:
+            self.obstacleList = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
+        else:
+            self.obstacleList = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 
         self.initPosition = (1, 1, directions['North'])
 
