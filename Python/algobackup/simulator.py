@@ -57,7 +57,6 @@ class Simulator:
         )
         self.canvas.pack()
 
-        """INTERFACE FOR SIMULATOR"""
         self.control_panel = ttk.Frame(t, padding=(10, 10))
         self.control_panel.grid(row=0, column=1, sticky="snew")
         control_pane_window = ttk.Panedwindow(self.control_panel, orient=VERTICAL)
@@ -72,23 +71,23 @@ class Simulator:
         )
         self.text_area.grid(row=2, column=0, pady=(20, 10))
 
-        # hamiltonian_path_button = ttk.Button(
-        #     action_pane,
-        #     text="Hamiltonian Path Computation",
-        #     command=self.hamiltonian_path,
-        #     width=30,
-        # )
-        # hamiltonian_path_button.grid(column=0, row=0, sticky="ew")
+        hamiltonian_path_button = ttk.Button(
+            action_pane,
+            text="Hamiltonian Path Computation",
+            command=self.hamiltonian_path,
+            width=30,
+        )
+        hamiltonian_path_button.grid(column=0, row=0, sticky="ew")
 
         fastest_path_button = ttk.Button(
             action_pane, text="Fastest Path", command=self.findFP
         )
         fastest_path_button.grid(column=0, row=1, sticky="ew")
 
-        # fastest_car_button = ttk.Button(
-        #     action_pane, text="Fastest Car", command=self.findFC
-        # )
-        # fastest_car_button.grid(column=0, row=2, sticky="ew")
+        fastest_car_button = ttk.Button(
+            action_pane, text="Fastest Car", command=self.findFC
+        )
+        fastest_car_button.grid(column=0, row=2, sticky="ew")
 
         reset_button = ttk.Button(action_pane, text="Reset", command=self.reset)
         reset_button.grid(column=0, row=3, sticky="ew")
@@ -202,71 +201,71 @@ class Simulator:
         logger.debug(f"After compression: {compressed_movements}")
         return compressed_movements
 
-    # def send_movement_to_stm(self, movement: Movement, require_ack: bool) -> bool:
-    #     while True:
-    #         if isinstance(movement, Movement):
-    #             movement = movement.value
+    def send_movement_to_stm(self, movement: Movement, require_ack: bool) -> bool:
+        while True:
+            if isinstance(movement, Movement):
+                movement = movement.value
 
-    #         logger.debug(
-    #             f"[ALGO --> STM] Sending movement='{movement}' - require_ack = {require_ack}"
-    #         )
-    #         self.communicate.communicate(movement, listen=require_ack)
+            logger.debug(
+                f"[ALGO --> STM] Sending movement='{movement}' - require_ack = {require_ack}"
+            )
+            self.communicate.communicate(movement, listen=require_ack)
 
-    #         if not require_ack:
-    #             break
+            if not require_ack:
+                break
 
-    #         # stop sending the same movement if STM acknowledges
-    #         if self.communicate.msg == Message.ACK.value:
-    #             logger.debug(f"[STM --> ALGO] Received ACK for movement='{movement}'")
-    #             self.communicate.msg = ""
-    #             break
-    #         else:
-    #             logger.debug(
-    #                 f"[STM --> ALGO] Missing ACK for movement='{movement}'. Sleeping and retrying in 1 second..."
-    #             )
-    #             time.sleep(1)
+            # stop sending the same movement if STM acknowledges
+            if self.communicate.msg == Message.ACK.value:
+                logger.debug(f"[STM --> ALGO] Received ACK for movement='{movement}'")
+                self.communicate.msg = ""
+                break
+            else:
+                logger.debug(
+                    f"[STM --> ALGO] Missing ACK for movement='{movement}'. Sleeping and retrying in 1 second..."
+                )
+                time.sleep(1)
 
-    #     return True
+        return True
 
-    # def send_live_location_to_android(self) -> bool:
-    #     bearing_direction = {
-    #         Bearing.NORTH: Direction.NORTH,
-    #         Bearing.EAST: Direction.EAST,
-    #         Bearing.SOUTH: Direction.SOUTH,
-    #         Bearing.WEST: Direction.WEST,
-    #     }
+    def send_live_location_to_android(self) -> bool:
+        bearing_direction = {
+            Bearing.NORTH: Direction.NORTH,
+            Bearing.EAST: Direction.EAST,
+            Bearing.SOUTH: Direction.SOUTH,
+            Bearing.WEST: Direction.WEST,
+        }
 
-    #     # (19 - y) to convert from arena's representation which treats bottom-left as (0,0)
-    #     # to our representation which treats top-left as (0, 0)
-    #     x, y = self.robot.x, 19 - self.robot.y
-    #     direction = bearing_direction[self.robot.bearing].value
-    #     live_location = f"ROBOT,{x},{y},{direction}"
-    #     logger.debug(
-    #         f"[ALGO --> AND] Sending live_location='{live_location}' - require_ack=False"
-    #     )
-    #     self.communicate.communicate(live_location, listen=False)
-    #     return True
+        # (19 - y) to convert from arena's representation which treats bottom-left as (0,0)
+        # to our representation which treats top-left as (0, 0)
+        x, y = self.robot.x, 19 - self.robot.y
+        direction = bearing_direction[self.robot.bearing].value
+        live_location = f"ROBOT,{x},{y},{direction}"
+        logger.debug(
+            f"[ALGO --> AND] Sending live_location='{live_location}' - require_ack=False"
+        )
+        self.communicate.communicate(live_location, listen=False)
+        return True
 
-    # def send_image_id_to_rpi(self, i: int) -> bool:
-    #     x, y = self.temp_pairs[i]
+    def send_image_id_to_rpi(self, i: int) -> bool:
+        x, y = self.temp_pairs[i]
 
-    #     for obstacle in self.obstacles:
-    #         if obstacle.x == x and obstacle.y == y:
-    #             image_id = f"IMG,{obstacle.id}"
-    #             logger.debug(
-    #                 f"[ALGO --> AND] Sending image_id='{image_id}' - require_ack=False"
-    #             )
-    #             self.communicate.communicate(image_id, listen=False)
-    #             return True
+        for obstacle in self.obstacles:
+            if obstacle.x == x and obstacle.y == y:
+                image_id = f"IMG,{obstacle.id}"
+                logger.debug(
+                    f"[ALGO --> AND] Sending image_id='{image_id}' - require_ack=False"
+                )
+                self.communicate.communicate(image_id, listen=False)
+                return True
 
-    #     logger.error(f"No image ID was found for i={i}")
-    #     return False
+        logger.error(f"No image ID was found for i={i}")
+        return False
 
     def findFP(self):
         self.robot.fastestPath(map_sim)
 
-    # def findFC(self):
-    #     self.robot.fastestCar()
+    def findFC(self):
+        self.robot.fastestCar()
 
     def hamiltonian_path(self):
         self.robot.hamiltonian_path_search(map_sim, self.goal_pairs)
@@ -325,6 +324,14 @@ class Simulator:
                         self.canvas.itemconfig(
                             config.map_cells_1[y - 1 + i][x - 1 + j], fill=wall_c
                         )
+                        if not map_sim[y - 1 + i][x - 1 + j] in [
+                            10,
+                            11,
+                            12,
+                            13,
+                        ]:  # Skip the obstacle itself to prevent changes
+                            # Update surrounding wall near the obstacle (3x3)
+                            map_sim[y - 1 + i][x - 1 + j] = wall
 
         if map_sim[y][x] in [10, 11, 12, 13]:
             if [x, y] not in self.temp_pairs:
@@ -335,7 +342,7 @@ class Simulator:
 
         direction = ""
         # Start box
-        if (8 <= y <= 10) and (1 <= x <= 3):
+        if (17 <= y <= 19) and (0 <= x <= 2):
             color = "gold"
         elif map_sim[y][x] in [0, 2]:
             color = "gray64"
