@@ -216,13 +216,15 @@ class TSP:
     def printPathInfo(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
         segments = []
+        path = []
 
         for start, end in index:
             startNode = seq[start]
             endNode = seq[end]
-            dubPath = self.dubinsPath[startNode][endNode][1]
-            dist = self.dubinsPath[startNode][endNode][0]
-            config = self.dubinsPath[startNode][endNode][3]
+            dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
+
+            for coor in pathPts:
+                path.append(coor)
 
             zipped = [(config[0], dubPath[0]), (config[1], dubPath[2]), (config[2], dubPath[1])]
             print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
@@ -243,7 +245,7 @@ class TSP:
 
             print('\nFull Distance; {}\n'.format(dist))
         
-        return segments
+        return segments, path
 
 
     # Prints the desired info
