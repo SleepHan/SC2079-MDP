@@ -3,7 +3,7 @@ import numpy as np
 
 # Create TSP object - TSP(StartPos, XLen, YLen, TurnRad)
 tsp = TSP((2, 2, 'North'), 20, 20, 2.25)
-tsp.testObstacles(6)
+tsp.testObstacles(2)
 
 # Calculate path dist - calcDubins(Step)
 res = tsp.calcDubins(1)
@@ -16,13 +16,20 @@ if res:
 
     if dist != float('inf'):
         # Get the command to send to STM
-        segments = tsp.generateCommands(sequence, len(sequence))
+        fullPath = tsp.generateCommands(sequence, len(sequence))
 
-        # Seg = [Command, Rad, Dist, StartCoor, EndCoor]
-        for seg in segments:
-            print('{}: {}'.format(seg[0], round(seg[2 if seg[0] == 'S' else 1], 2)))
+        # Getting path to next obstacle in sequence
+        for path in fullPath:
+            # path = [SegmentList, StartCoorOfPath, EndCoorOfPath]
+            segments, startCoor, endCoor = path
+            print('Path: {} -> {}'.format(startCoor, endCoor))
 
-            print('{} -> {}'.format(seg[3], seg[4]))
+            # Seg = [Command, Rad, Dist, StartCoorOfSegment, EndCoorOfSegment]
+            for seg in segments:
+                print('{}: {}'.format(seg[0], round(seg[2 if seg[0] == 'S' else 1], 2)))
+                print('{} -> {}'.format(seg[3], seg[4]))
+                print()
+
             print()
 
         # Simulator

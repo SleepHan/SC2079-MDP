@@ -223,9 +223,13 @@ class TSP:
     # Gives the start and end coordinates for the Android side (Unrounded)
     def generateCommands(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
-        segments = []
+        fullPath = []
 
         for start, end in index:
+            segment = []
+            segStart = None
+            segEnd = None
+
             startNode = seq[start]
             endNode = seq[end]
             dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
@@ -237,22 +241,26 @@ class TSP:
                 startCoor = np.rint(pathCoor[0])
                 endCoor = np.rint(pathCoor[-1])
                 
+                if segStart is None: segStart = startCoor
+
                 if segType == 'l':
                     print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segments.append(['L', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['L', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
                 elif segType == 'r':
                     print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segments.append(['R', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['R', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
                 else:
                     print('Straight: {}'.format(length))
                     print('Actual Length: {}\n'.format(length*10))
-                    segments.append(['S', length, length*10, startCoor, endCoor])
+                    segment.append(['S', length, length*10, startCoor, endCoor])
 
             print('\nFull Distance; {}\n'.format(dist))
+            segEnd = endCoor
+            fullPath.append([segment, segStart, segEnd])
         
-        return segments
+        return fullPath
 
 
     # Prints the desired info
