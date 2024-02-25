@@ -271,7 +271,8 @@ class TSP:
 
             currentPos = endCoor
             segEnd = endCoor
-            fullPath.append([segment, segStart, segEnd])
+            obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
+            fullPath.append([segment, segStart, segEnd, obstacle])
         
         return fullPath
 

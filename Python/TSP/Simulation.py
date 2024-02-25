@@ -20,9 +20,9 @@ if res:
 
         # Getting path to next obstacle in sequence
         for path in fullPath:
-            # path = [SegmentList, StartCoorOfPath, EndCoorOfPath]
-            segments, startCoor, endCoor = path
-            print('Path: {} -> {}'.format(startCoor, endCoor))
+            # path = [SegmentList, StartCoorOfPath, EndCoorOfPath, ObstacleCoor]
+            segments, startCoor, endCoor, obsCoor = path
+            print('Path to {}: {} -> {}'.format(obsCoor, startCoor, endCoor))
 
             # Seg = [Command, Rad, Dist, StartCoorOfSegment, EndCoorOfSegment]
             for seg in segments:
