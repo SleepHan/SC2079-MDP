@@ -257,11 +257,11 @@ class TSP:
                 if segType == 'l':
                     print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['L', abs(math.degrees(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['L', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 elif segType == 'r':
                     print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['R', abs(math.degrees(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['R', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 else:
                     print('Straight: {}'.format(length))
                     print('Actual Length: {}\n'.format(length*10))
