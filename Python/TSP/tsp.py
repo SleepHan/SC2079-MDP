@@ -22,10 +22,6 @@ robotPositions = {
     'W': directions['East']
 }
 
-# Possible positions RC will complete its pathing in
-finalPositions = [(1, 1, directions['South']),
-                  (1, 2, directions['West'])]
-
 
 startNode = 0
 endNode = 0
