@@ -224,12 +224,16 @@ class TSP:
     def generateCommands(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
         fullPath = []
+        currentPos = None
 
+        # Getting path from start to end
         for start, end in index:
+            print('===============New Path===============')
             segment = []
             segStart = None
             segEnd = None
 
+            # Getting node index and path info
             startNode = seq[start]
             endNode = seq[end]
             dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
@@ -237,6 +241,12 @@ class TSP:
             zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
             print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
 
+            if currentPos is not None:
+                print('Back: 2')
+                print('Actual Length: 20\n')
+                segment.append(['B', 2, 20, currentPos, pathPts[0][0]])
+
+            # Going through each segment of path
             for segType, length, pathCoor in zipped:
                 startCoor = np.rint(pathCoor[0])
                 endCoor = np.rint(pathCoor[-1])
@@ -257,6 +267,8 @@ class TSP:
                     segment.append(['S', length, length*10, startCoor, endCoor])
 
             print('\nFull Distance; {}\n'.format(dist))
+
+            currentPos = endCoor
             segEnd = endCoor
             fullPath.append([segment, segStart, segEnd])
         
