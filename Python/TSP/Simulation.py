@@ -33,7 +33,7 @@ if res:
             print()
 
         # Simulator
-        # tsp.displayPath(sequence, len(sequence))
+        tsp.displayPath(sequence, len(sequence))
     
     else:
         print('No valid path')

@@ -3,6 +3,7 @@ from dubins import Dubins
 import matplotlib.pyplot as plt
 import numpy as np
 from python_tsp.exact import solve_tsp_dynamic_programming
+import math
 
 
 # Directions to radians
@@ -256,11 +257,11 @@ class TSP:
                 if segType == 'l':
                     print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['L', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['L', abs(math.degrees(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 elif segType == 'r':
                     print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['R', length, self.turnRad*(abs(length))*10, startCoor, endCoor])
+                    segment.append(['R', abs(math.degrees(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 else:
                     print('Straight: {}'.format(length))
                     print('Actual Length: {}\n'.format(length*10))
