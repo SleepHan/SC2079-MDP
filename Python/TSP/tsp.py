@@ -239,7 +239,7 @@ class TSP:
             dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
 
             zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
-            print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
+            print('{} -> {}'.format(self.positions[startNode] if currentPos is None else currentPos, self.positions[endNode]))
 
             if currentPos is not None:
                 print('Back: 2')
@@ -251,7 +251,7 @@ class TSP:
                 startCoor = np.rint(pathCoor[0])
                 endCoor = np.rint(pathCoor[-1])
                 
-                if segStart is None: segStart = startCoor
+                if segStart is None: segStart = startCoor if currentPos is None else currentPos
 
                 if segType == 'l':
                     print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
