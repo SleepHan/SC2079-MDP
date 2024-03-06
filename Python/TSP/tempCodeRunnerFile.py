@@ -1,0 +1,2 @@
+)
+tsp.testObstacles(5)
