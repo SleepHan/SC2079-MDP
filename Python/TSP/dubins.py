@@ -54,23 +54,24 @@ class Dubins:
 
     # Checks if pathing is a valid move
     def validMove(self, path):
-        for point in path:
-            ax, ay = point[:2]
+        for seg in path:
+            for point in seg:
+                ax, ay = point[:2]
 
-            # Border Checking
-            if ax < 1 or ax > 18: 
-                print('X Collide: [{}][{}]'.format(ax, ay))
-                return False
-            if ay < 1 or ay > 18: 
-                print('Y Collide: [{}][{}]'.format(ax, ay))
-                return False
-            
-            # Obstacle Checking
-            for obs in self.obstacleList:
-                ox, oy, _ = obs
-                if ox - 1 <= ax <= ox + 1 and oy - 1 <= ay <= oy + 1:
-                    print('Obstacle Collide: [{}][{}]'.format(ox, oy))
+                # Border Checking
+                if ax < 1 or ax > 18: 
+                    print('X Collide: [{}][{}]'.format(ax, ay))
                     return False
+                if ay < 1 or ay > 18: 
+                    print('Y Collide: [{}][{}]'.format(ax, ay))
+                    return False
+                
+                # Obstacle Checking
+                for obs in self.obstacleList:
+                    ox, oy, _ = obs
+                    if ox - 1 <= ax <= ox + 1 and oy - 1 <= ay <= oy + 1:
+                        print('Obstacle Collide: [{}][{}]'.format(ox, oy))
+                        return False
         
         print('VALID')
         print()
@@ -504,17 +505,20 @@ class Dubins:
         dist_straight = dist(ini, fin)
 
         # We can now generate all the points with the desired precision
+        seg1 = []
+        seg2 = []
+        seg3 = []
         points = []
         for x in np.arange(0, total, self.point_separation):
             if x < abs(path[0])*self.radius: # First turn
-                points.append(self.circle_arc(start, path[0], center_0, x))
+                seg1.append(self.circle_arc(start, path[0], center_0, x))
             elif x > total - abs(path[1])*self.radius: # Last turn
-                points.append(self.circle_arc(end, path[1], center_2, x-total))
+                seg3.append(self.circle_arc(end, path[1], center_2, x-total))
             else: # Straight segment
                 coeff = (x-abs(path[0])*self.radius)/dist_straight
-                points.append(coeff*fin + (1-coeff)*ini)
-        points.append(end[:2])
-        return np.array(points)
+                seg2.append(coeff*fin + (1-coeff)*ini)
+        seg3.append(end[:2])
+        return np.array([np.array(seg1), np.array(seg2), np.array(seg3)])
 
     def generate_points_curve(self, start, end, path):
         """
@@ -554,18 +558,27 @@ class Dubins:
         psi_0 = np.arctan2((center_1 - center_0)[1],
                            (center_1 - center_0)[0])-np.pi
 
-        points = []
+        seg1 = []
+        seg2 = []
+        seg3 = []
+        # points = []
         for x in np.arange(0, total, self.point_separation):
             if x < abs(path[0])*self.radius: # First turn
-                points.append(self.circle_arc(start, path[0], center_0, x))
+                seg1.append(self.circle_arc(start, path[0], center_0, x))
+                # points.append(self.circle_arc(start, path[0], center_0, x))
             elif x > total - abs(path[1])*self.radius: # Last turn
-                points.append(self.circle_arc(end, path[1], center_2, x-total))
+                seg3.append(self.circle_arc(end, path[1], center_2, x-total))
+                # points.append(self.circle_arc(end, path[1], center_2, x-total))
             else: # Middle Turn
                 angle = psi_0-np.sign(path[0])*(x/self.radius-abs(path[0]))
                 vect = np.array([np.cos(angle), np.sin(angle)])
-                points.append(center_1+self.radius*vect)
-        points.append(end[:2])
-        return np.array(points)
+                seg2.append(center_1+self.radius*vect)
+                # points.append(center_1+self.radius*vect)
+        # points.append(end[:2])
+        seg3.append(end[:2])
+        print(seg1, seg2, seg3)
+        # print(points)
+        return np.array([np.array(seg1), np.array(seg2), np.array(seg3)])
 
     def circle_arc(self, reference, beta, center, x):
         """

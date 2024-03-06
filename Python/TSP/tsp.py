@@ -3,6 +3,7 @@ from dubins import Dubins
 import matplotlib.pyplot as plt
 import numpy as np
 from python_tsp.exact import solve_tsp_dynamic_programming
+import math
 
 
 # Directions to radians
@@ -20,10 +21,6 @@ robotPositions = {
     'S': directions['North'],
     'W': directions['East']
 }
-
-# Possible positions RC will complete its pathing in
-finalPositions = [(1, 1, directions['South']),
-                  (1, 2, directions['West'])]
 
 
 startNode = 0
@@ -78,6 +75,7 @@ class TSP:
 
 
     # Calculates the shortest dubins path between each node
+    # Returns False if there is an obstacle impossible to traverse to
     def calcDubins(self, step):
         local_planner = Dubins(self.turnRad, step, self.obstacleList)
 
@@ -119,6 +117,9 @@ class TSP:
 
         return True
 
+
+    # Makes use of the TSP DP library to get the sequence of obstacles to visit
+    # Distance will be infinity if unable to find a cycle
     def calcTSP(self):
         distance_matrix = np.matrix(self.distance)
         permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
@@ -130,13 +131,10 @@ class TSP:
         #     [10, 5, 3,  0]
         # ])
         # permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
-        print(permutation)
-        print(distance)
-        print()
         return (permutation, distance)
 
 
-    # Displays paths selected to complete Hamiltonian cycle
+    # Displays paths selected to complete Hamiltonian cycle (Simulation)
     def displayPath(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
         rx, ry = [], []
@@ -194,58 +192,85 @@ class TSP:
             orien = self.positions[endNode][2]
             pathing = self.dubinsPath[startNode][endNode][2]
 
-            for x,y in pathing:
-                rx.append(x)
-                ry.append(y)
-            
-                plt.plot(rx, ry, '-r')
-                plt.pause(0.0005)
+            for seg in pathing:
+                print('New Segment')
+                print(seg)
+                print()
 
-            # Print cross and arrow only at obstacles
-            if not (x <=4 and y <=4):
-                plt.plot(x, y, 'xk')
-                if orien == directions['North']: plt.arrow(x, y, 0, 1, length_includes_head=True, head_width=0.5, head_length=0.5)
-                elif orien == directions['South']: plt.arrow(x, y, 0, -1, length_includes_head=True, head_width=0.5, head_length=0.5)
-                elif orien == directions['East']: plt.arrow(x, y, 1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
-                else: plt.arrow(x, y, -1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
+                for x,y in seg:
+                    rx.append(x)
+                    ry.append(y)
+                
+                    plt.plot(rx, ry, '-r')
+                    plt.pause(0.005)
+
+                # Print cross and arrow only at obstacles
+                if not (x <=4 and y <=4):
+                    plt.plot(x, y, 'xk')
+                    if orien == directions['North']: plt.arrow(x, y, 0, 1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    elif orien == directions['South']: plt.arrow(x, y, 0, -1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    elif orien == directions['East']: plt.arrow(x, y, 1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    else: plt.arrow(x, y, -1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
                 
         plt.show()
 
 
     # Gives the details of each path selected for the Hamiltonian cycle
-    def printPathInfo(self, seq, num):
+    # Generates the commands to send to STM
+    # Gives the start and end coordinates for the Android side (Unrounded)
+    def generateCommands(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
-        segments = []
-        path = []
+        fullPath = []
+        currentPos = None
 
+        # Getting path from start to end
         for start, end in index:
+            print('===============New Path===============')
+            segment = []
+            segStart = None
+            segEnd = None
+
+            # Getting node index and path info
             startNode = seq[start]
             endNode = seq[end]
             dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
 
-            for coor in pathPts:
-                path.append(coor)
+            zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
+            print('{} -> {}'.format(self.positions[startNode] if currentPos is None else currentPos, self.positions[endNode]))
 
-            zipped = [(config[0], dubPath[0]), (config[1], dubPath[2]), (config[2], dubPath[1])]
-            print('{} -> {}'.format(self.positions[startNode], self.positions[endNode]))
+            if currentPos is not None:
+                print('Back: 2')
+                print('Actual Length: 20\n')
+                segment.append(['B', 2, 20, currentPos, pathPts[0][0]])
 
-            for segType, length in zipped:
+            # Going through each segment of path
+            for segType, length, pathCoor in zipped:
+                startCoor = np.rint(pathCoor[0])
+                endCoor = np.rint(pathCoor[-1])
+                
+                if segStart is None: segStart = startCoor if currentPos is None else currentPos
+
                 if segType == 'l':
                     print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segments.append(['L', length, self.turnRad*(abs(length))*10])
+                    segment.append(['L', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 elif segType == 'r':
                     print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
                     print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segments.append(['R', length, self.turnRad*(abs(length))*10])
+                    segment.append(['R', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
                 else:
                     print('Straight: {}'.format(length))
                     print('Actual Length: {}\n'.format(length*10))
-                    segments.append(['S', length, length*10])
+                    segment.append(['S', length, length*10, startCoor, endCoor])
 
             print('\nFull Distance; {}\n'.format(dist))
+
+            currentPos = endCoor
+            segEnd = endCoor
+            obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
+            fullPath.append([segment, segStart, segEnd, obstacle])
         
-        return segments, path
+        return fullPath
 
 
     # Prints the desired info
@@ -271,6 +296,8 @@ class TSP:
             self.obstacleList = [(1, 18, 'S'), (6, 12, 'N'), (10, 7, 'E'), (15, 16, 'S'), (19, 9, 'W'), (13, 2, 'W')]
         elif choice == 4:
             self.obstacleList = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
+        elif choice == 5:
+            self.obstacleList = [(1, 14, 'E')]
         else:
             self.obstacleList = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 
