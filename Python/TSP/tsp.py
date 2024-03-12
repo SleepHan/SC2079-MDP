@@ -1,4 +1,4 @@
-from dubins import Dubins
+from .dubins import Dubins
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +22,6 @@ robotPositions = {
     'W': directions['East']
 }
 
-
 startNode = 0
 endNode = 0
 
@@ -31,7 +30,7 @@ class TSP:
         self.dimensions = (dimX, dimY)
         self.obstacleList = []
         self.initPosition = (initPosition[0], initPosition[1], directions[initPosition[2]])
-        self.positions = []
+        self.positions = [self.initPosition]
         self.dubinsPath = []
         self.distance = []
         self.turnRad = turnRad
@@ -71,6 +70,7 @@ class TSP:
 
     # Expected input for obs = (x, y, orien)
     def addObstacle(self, obs):
+        self.obstacleList.append(obs)
         self.positions.append(self.expectedPos(obs))
 
 
@@ -298,6 +298,8 @@ class TSP:
             self.obstacleList = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
         elif choice == 5:
             self.obstacleList = [(1, 14, 'E')]
+        elif choice == 6:
+            self.obstacleList = [(10, 10, 'S')]
         else:
             self.obstacleList = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 
