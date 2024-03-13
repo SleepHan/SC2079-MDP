@@ -196,8 +196,8 @@ def main_loop():
 	
 
 	"""CHANGE ACCORDINGLY, TESTING"""
-	img1 = "left_arrow"
-	img2 = "left_arrow"
+	# img1 = "left_arrow"
+	# img2 = "left_arrow"
 
 	perform_stm_write(init[0])
 	
@@ -206,13 +206,12 @@ def main_loop():
 	img1 = perform_classification()
 	print(f'image1:{img1}')
  
-	"""continue moving forward if there is no image"""
+	"""continue moving forward if there is no image detected"""
 	while img1 == "":
 		perform_stm_write(init[0])
 		img1 = perform_classification()
 		print(f'image1:{img1}')
   
-	"Hit bullseye"
 
 	if "right_arrow" in img1:
 		# move_stm(case_r)
