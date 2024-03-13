@@ -1,4 +1,5 @@
-from .dubins import Dubins
+from dubins import Dubins
+from astar import AStar
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,18 +9,18 @@ import math
 
 # Directions to radians
 directions = {
-    'North': np.pi/2,
-    'East': 2*np.pi,
-    'South': (3*np.pi)/2,
-    'West': np.pi
+    'N': np.pi/2,
+    'E': 2*np.pi,
+    'S': (3*np.pi)/2,
+    'W': np.pi
 }
 
 # Expected orientation of robot when facing obstacle
 robotPositions = {
-    'N': directions['South'],
-    'E': directions['West'],
-    'S': directions['North'],
-    'W': directions['East']
+    'N': 'S',
+    'E': 'W',
+    'S': 'N',
+    'W': 'E'
 }
 
 startNode = 0
@@ -29,9 +30,12 @@ class TSP:
     def __init__(self, initPosition, dimX, dimY, turnRad):
         self.dimensions = (dimX, dimY)
         self.obstacleList = []
-        self.initPosition = (initPosition[0], initPosition[1], directions[initPosition[2]])
-        self.positions = [self.initPosition]
+        self.initPositionRad = (initPosition[0], initPosition[1], directions[initPosition[2]])
+        self.initPositionDir = (initPosition[0], initPosition[1], initPosition[2])
+        self.positionsRad = [self.initPositionRad]
+        self.positionsDir = [self.initPositionDir]
         self.dubinsPath = []
+        self.aStarPath = []
         self.distance = []
         self.turnRad = turnRad
 
@@ -51,8 +55,9 @@ class TSP:
         else: ax -= 2
         
         orient = robotPositions[obsOrient]
-        finalPos = (ax, ay, orient)
-        return finalPos
+        finalPosRad = (ax, ay, directions[orient])
+        finalPosDir = (ax, ay, orient)
+        return finalPosRad, finalPosDir
 
 
     # Calculate the position of RC after backward movement
@@ -60,9 +65,9 @@ class TSP:
         ax, ay, robOrient = pos
         backVal = 2
 
-        if robOrient == directions['North']: ay -= backVal
-        elif robOrient == directions['East']: ax -= backVal
-        elif robOrient == directions['South']: ay += backVal
+        if robOrient == directions['N'] or robOrient == 'N': ay -= backVal
+        elif robOrient == directions['E'] or robOrient == 'E': ax -= backVal
+        elif robOrient == directions['S'] or robOrient == 'S': ay += backVal
         else: ax += backVal
 
         return (ax, ay, robOrient)
@@ -71,45 +76,103 @@ class TSP:
     # Expected input for obs = (x, y, orien)
     def addObstacle(self, obs):
         self.obstacleList.append(obs)
-        self.positions.append(self.expectedPos(obs))
+        posRad, posDir = self.expectedPos(obs)
+        self.positionsRad.append(posRad)
+        self.positionsDir.append(posDir)
 
 
     # Calculates the shortest dubins path between each node
     # Returns False if there is an obstacle impossible to traverse to
+    # Distance is calculated based on 20x20
     def calcDubins(self, step):
+        print('Running Dubins')
         local_planner = Dubins(self.turnRad, step, self.obstacleList)
 
-        for start in self.positions:
+        for start in self.positionsRad:
             origin = start
             paths = []
     
             # If not initial position, assume that RC will reverse by 2 grids before moving
-            if start != self.initPosition:
+            if start != self.initPositionRad:
                 start = self.backward(start)
 
-            for dst in self.positions:
-                if dst == self.initPosition or origin == dst:
-                    paths.append(float('inf'))
+            for dst in self.positionsRad:
+                if dst == self.initPositionRad or origin == dst:
+                    paths.append((float('inf'), None, None, None))
 
                 else:
-                    # Tuple: (Total_Dist, Specific_Dist, Pathing)
+                    # Tuple: (Total_Dist, Angles/StrDist, PathCoordiates, SegmentConfig)
                     pathing = local_planner.dubins_path(start, dst)
                     paths.append(pathing)
 
-            if origin != self.initPosition:
+            if origin != self.initPositionRad:
                 minDist = [float('inf')]
                 for x in range(1, 2):
                     for y in range(1, 2):
                         for _, angle in directions.items():
                             pathing = local_planner.dubins_path(start, (x, y, angle))
-                            if isinstance(pathing, float): continue
-                            elif pathing[0] < minDist[0]: minDist = pathing
+                            if pathing[0] < minDist[0]: minDist = pathing
 
                 paths[0] = minDist
 
             self.dubinsPath.append(paths)
 
-        self.distance = [[path if isinstance(path, float) else path[0] for path in node] for node in self.dubinsPath]
+        self.distance = [[path[0] for path in node] for node in self.dubinsPath]
+
+        if any(all(x == float('inf') for x in paths) for paths in self.distance):
+            print('No valid pathing')
+            return False
+
+        return True
+
+
+    # Calculates the shortest path using A*
+    # Distance is calculated based on 200x200
+    def calAStar(self):
+        print('Running A*')
+        astarPlanner = AStar((200, 200), 25, self.obstacleList)
+        print('Object created')
+
+        for start in self.positionsDir:
+            origin = start
+            paths = []
+
+            if start != self.initPositionDir:
+                start = self.backward(start)
+
+            for dst in self.positionsDir:
+                if dst == self.initPositionDir or origin == dst:
+                    paths.append((float('inf'), None, None))
+                else:
+                    # Tuple: (Total_Dist, Movement_Command, Nodes_with_Orientation)
+                    pathing = astarPlanner.search(start, dst)
+                    paths.append(pathing)
+
+            # Return back to start
+            if origin != self.initPositionDir:
+                minDist = (float('inf'), None, None)
+                for x in range(1, 2):
+                    for y in range(1, 2):
+                        for key in directions.keys():
+                            pathing = astarPlanner.search(start, (x, y, key))
+                            if pathing[0] < minDist[0]: minDist = pathing
+
+                paths[0] = minDist
+
+            print('Node Complete')
+            self.aStarPath.append(paths)
+
+        print('===============Path===============')
+        for path in self.aStarPath:
+            print(path)
+        print('==================================')
+
+        self.distance = [[path[0] for path in node] for node in self.aStarPath]
+
+        print('===============Dist===============')
+        for path in self.distance:
+            print(path)
+        print('==================================')
 
         if any(all(x == float('inf') for x in paths) for paths in self.distance):
             print('No valid pathing')
@@ -189,7 +252,7 @@ class TSP:
         for start, end in index:
             startNode = seq[start]
             endNode = seq[end]
-            orien = self.positions[endNode][2]
+            orien = self.positionsRad[endNode][2]
             pathing = self.dubinsPath[startNode][endNode][2]
 
             for seg in pathing:
@@ -207,9 +270,9 @@ class TSP:
                 # Print cross and arrow only at obstacles
                 if not (x <=4 and y <=4):
                     plt.plot(x, y, 'xk')
-                    if orien == directions['North']: plt.arrow(x, y, 0, 1, length_includes_head=True, head_width=0.5, head_length=0.5)
-                    elif orien == directions['South']: plt.arrow(x, y, 0, -1, length_includes_head=True, head_width=0.5, head_length=0.5)
-                    elif orien == directions['East']: plt.arrow(x, y, 1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    if orien == directions['N']: plt.arrow(x, y, 0, 1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    elif orien == directions['S']: plt.arrow(x, y, 0, -1, length_includes_head=True, head_width=0.5, head_length=0.5)
+                    elif orien == directions['E']: plt.arrow(x, y, 1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
                     else: plt.arrow(x, y, -1, 0, length_includes_head=True, head_width=0.5, head_length=0.5)
                 
         plt.show()
@@ -236,7 +299,7 @@ class TSP:
             dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
 
             zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
-            print('{} -> {}'.format(self.positions[startNode] if currentPos is None else currentPos, self.positions[endNode]))
+            print('{} -> {}'.format(self.positionsRad[startNode] if currentPos is None else currentPos, self.positionsRad[endNode]))
 
             if currentPos is not None:
                 print('Back: 2')
@@ -289,27 +352,19 @@ class TSP:
     # Dummy values for testing purposes 
     def testObstacles(self, choice=0):
         if choice == 1:
-            self.obstacleList = [(2, 17, 'S'), (17, 13, 'W'), (14, 4, 'N'), (8, 5, 'E'), (5, 12, 'N')]
+            obstacles = [(2, 17, 'S'), (17, 13, 'W'), (14, 4, 'N'), (8, 5, 'E'), (5, 12, 'N')]
         elif choice == 2:
-            self.obstacleList = [(2, 18, 'S'), (6, 12, 'N'), (8, 5, 'E'), (15, 16, 'S'), (16, 1, 'W')]
+            obstacles = [(2, 18, 'S'), (6, 12, 'N'), (8, 5, 'E'), (15, 16, 'S'), (16, 1, 'W')]
         elif choice == 3:
-            self.obstacleList = [(1, 18, 'S'), (6, 12, 'N'), (10, 7, 'E'), (15, 16, 'S'), (19, 9, 'W'), (13, 2, 'W')]
+            obstacles = [(1, 18, 'S'), (6, 12, 'N'), (10, 7, 'E'), (15, 16, 'S'), (19, 9, 'W'), (13, 2, 'W')]
         elif choice == 4:
-            self.obstacleList = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
+            obstacles = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
         elif choice == 5:
-            self.obstacleList = [(1, 14, 'E')]
+            obstacles = [(1, 14, 'E')]
         elif choice == 6:
-            self.obstacleList = [(10, 10, 'S')]
+            obstacles = [(10, 10, 'S')]
         else:
-            self.obstacleList = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
+            obstacles = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 
-        self.initPosition = (1, 1, directions['North'])
-
-        # First element represents the inital position the RC will be in
-        self.positions.append(self.initPosition)
-
-        for obs in self.obstacleList:
+        for obs in obstacles:
             self.addObstacle(obs)
-
-        print(self.positions)
-
