@@ -1,2 +1,0 @@
-)
-tsp.testObstacles(5)
