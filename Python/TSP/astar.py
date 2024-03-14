@@ -120,16 +120,17 @@ class AStar:
             return (float('inf'), None, None)
 
         movCmd = []
-        trimmedPath = [path[0]]
         totalDist = 0
         straightType = None
         straightDist = 0
+        straightStart = None
         straightEnd  = None
         for src, dst in AStar.pairwise(path):
             mv = self.G.get_edge_data(src, dst)['mov']
             if mv in ['W', 'S']: 
                 # New straight movement
-                if straightType != mv: 
+                if straightType != mv:
+                    straightStart = src
                     straightType = mv
 
                 straightEnd = dst
@@ -138,19 +139,38 @@ class AStar:
             else: 
                 # End of straight movement
                 if straightDist > 0:
-                    movCmd.append('{} {}'.format(straightType, straightDist))
-                    trimmedPath.append(straightEnd)
+                    movCmd.append(
+                        {
+                            'type':     straightType,
+                            'start':    straightStart,
+                            'end':      straightEnd,
+                            'length':   straightDist
+                        }
+                    )
                     straightDist = 0
                     straightType = None
+                    straightStart = None
                     straightEnd = None
 
+                movCmd.append(
+                    {
+                        'type':     mv,
+                        'start':    src,
+                        'end':      dst,
+                        'angle':    np.pi/2,
+                        'length':   self.turnWeight
+                    }
+                )
                 totalDist += self.turnWeight
-                trimmedPath.append(dst)
-
-                movCmd.append(mv)
 
         if straightType is not None:
-            movCmd.append('{} {}'.format(straightType, straightDist))
-            trimmedPath.append(straightEnd)
+            movCmd.append(
+                {
+                    'type':     straightType,
+                    'start':    straightStart,
+                    'end':      straightEnd,
+                    'length':   straightDist
+                }
+            )
 
-        return (totalDist, movCmd, trimmedPath)
+        return (totalDist, movCmd)

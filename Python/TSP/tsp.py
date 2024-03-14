@@ -275,14 +275,13 @@ class TSP:
     # Gives the details of each path selected for the Hamiltonian cycle
     # Generates the commands to send to STM
     # Gives the start and end coordinates for the Android side (Unrounded)
-    def generateCommands(self, seq, num):
+    def generateCommandsDubins(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
         fullPath = []
         currentPos = None
 
         # Getting path from start to end
         for start, end in index:
-            print('===============New Path===============')
             segment = []
             segStart = None
             segEnd = None
@@ -290,15 +289,24 @@ class TSP:
             # Getting node index and path info
             startNode = seq[start]
             endNode = seq[end]
-            dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
+            _, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
 
             zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
             print('{} -> {}'.format(self.positionsRad[startNode] if currentPos is None else currentPos, self.positionsRad[endNode]))
 
             if currentPos is not None:
-                print('Back: 2')
-                print('Actual Length: 20\n')
-                segment.append(['B', 2, 20, currentPos, pathPts[0][0]])
+                # print('Back: 2')
+                # print('Actual Length: 20\n')
+                segment.append(
+                        {
+                            'type':     'S',
+                            'start':    currentPos,
+                            'end':      pathPts[0][0],
+                            'length':   20
+                        }
+                    )
+
+                # segment.append(['S', 2, 20, currentPos, pathPts[0][0]])
 
             # Going through each segment of path
             for segType, length, pathCoor in zipped:
@@ -308,25 +316,72 @@ class TSP:
                 if segStart is None: segStart = startCoor if currentPos is None else currentPos
 
                 if segType == 'l':
-                    print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
-                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['L', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
-                elif segType == 'r':
-                    print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
-                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['R', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
-                else:
-                    print('Straight: {}'.format(length))
-                    print('Actual Length: {}\n'.format(length*10))
-                    segment.append(['S', length, length*10, startCoor, endCoor])
+                    # print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    # print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segment.append(
+                        {
+                            'type':     'AW',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'angle':    math.degrees(abs(length)),
+                            'length':   self.turnRad*(abs(length))*10
+                        }
+                    )
 
-            print('\nFull Distance; {}\n'.format(dist))
+                    # segment.append(['AW', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                elif segType == 'r':
+                    # print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    # print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segment.append(
+                        {
+                            'type':     'DW',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'angle':    math.degrees(abs(length)),
+                            'length':   self.turnRad*(abs(length))*10
+                        }
+                    )
+
+                    # segment.append(['DW', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                else:
+                    # print('Straight: {}'.format(length))
+                    # print('Actual Length: {}\n'.format(length*10))
+                    segment.append(
+                        {
+                            'type':     'W',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'length':   length*10
+                        }
+                    )
+
+                    # segment.append(['W', length, length*10, startCoor, endCoor])
+
+            # print('\nFull Distance; {}\n'.format(dist))
 
             currentPos = endCoor
             segEnd = endCoor
             obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
-            fullPath.append([segment, segStart, segEnd, obstacle])
+            fullPath.append((segment, segStart, segEnd, obstacle))
         
+        return fullPath
+
+
+    def generateCommandsAStar(self, seq, num):
+        index = [(i, (i+1)%num) for i in range(num)]
+        fullPath = []
+
+        for start, end in index:
+            # Getting node index and path info
+            startNode = seq[start]
+            endNode = seq[end]
+            _, cmd = self.aStarPath[startNode][endNode]
+            segStart = cmd[0]['start']
+            segEnd = cmd[-1]['end']
+            
+            obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
+            fullPath.append((cmd, segStart, segEnd, obstacle))
+
         return fullPath
 
 
@@ -376,6 +431,13 @@ class TSP:
         else: print('No valid path available')
 
         if finalDist == float('inf'): print('No valid path available')
+        elif self.distCalType == 1:
+            commands = self.generateCommandsDubins(sequence, len(sequence))
         else:
-            print(finalDist)
-            print(sequence)
+            commands = self.generateCommandsAStar(sequence, len(sequence))
+
+        for cmd in commands:
+            print('=========New Path=========')
+            for seg in cmd:
+                print(seg)
+            print('==========================')
