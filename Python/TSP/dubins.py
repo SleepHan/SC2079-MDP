@@ -145,7 +145,7 @@ class Dubins:
             pathPoints = self.generate_points(start, end, dubins_path, straight)
 
             if path_length == float('inf'): print("No valid moves")
-            elif self.validMove(pathPoints): return (path_length, dubins_path, pathPoints, config)
+            elif self.validMove(pathPoints): return (path_length*10, dubins_path, pathPoints, config)
             else: print('Collision detection in {} config'.format(config))
 
         print()

@@ -27,7 +27,7 @@ startNode = 0
 endNode = 0
 
 class TSP:
-    def __init__(self, initPosition, dimX, dimY, turnRad):
+    def __init__(self, initPosition, dimX, dimY, turnRad, distCalType):
         self.dimensions = (dimX, dimY)
         self.obstacleList = []
         self.initPositionRad = (initPosition[0], initPosition[1], directions[initPosition[2]])
@@ -35,9 +35,13 @@ class TSP:
         self.positionsRad = [self.initPositionRad]
         self.positionsDir = [self.initPositionDir]
         self.dubinsPath = []
+        self.dubinsDist = []
         self.aStarPath = []
-        self.distance = []
+        self.aStarDist = []
+        self.hybridPath = []
+        self.hybridDist = []
         self.turnRad = turnRad
+        self.distCalType = distCalType
 
 
     # Positions RC is expected to be in to accurately capture the image of the obstacles
@@ -117,10 +121,9 @@ class TSP:
 
             self.dubinsPath.append(paths)
 
-        self.distance = [[path[0] for path in node] for node in self.dubinsPath]
+        self.dubinsDist = [[path[0] for path in node] for node in self.dubinsPath]
 
-        if any(all(x == float('inf') for x in paths) for paths in self.distance):
-            print('No valid pathing')
+        if any(all(x == float('inf') for x in paths) for paths in self.dubinsDist):
             return False
 
         return True
@@ -130,8 +133,7 @@ class TSP:
     # Distance is calculated based on 200x200
     def calAStar(self):
         print('Running A*')
-        astarPlanner = AStar((20, 20), 10, 3, self.obstacleList)
-        print('Object created')
+        astarPlanner = AStar(self.dimensions, 10, self.turnRad, self.obstacleList)
 
         for start in self.positionsDir:
             origin = start
@@ -159,23 +161,11 @@ class TSP:
 
                 paths[0] = minDist
 
-            print('Node Complete')
             self.aStarPath.append(paths)
 
-        print('===============Path===============')
-        for path in self.aStarPath:
-            print(path)
-        print('==================================')
+        self.aStarDist = [[path[0] for path in node] for node in self.aStarPath]
 
-        self.distance = [[path[0] for path in node] for node in self.aStarPath]
-
-        print('===============Dist===============')
-        for path in self.distance:
-            print(path)
-        print('==================================')
-
-        if any(all(x == float('inf') for x in paths) for paths in self.distance):
-            print('No valid pathing')
+        if any(all(x == float('inf') for x in paths) for paths in self.aStarDist):
             return False
 
         return True
@@ -184,7 +174,11 @@ class TSP:
     # Makes use of the TSP DP library to get the sequence of obstacles to visit
     # Distance will be infinity if unable to find a cycle
     def calcTSP(self):
-        distance_matrix = np.matrix(self.distance)
+        if self.distCalType == 1:
+            distance_matrix = np.matrix(self.dubinsDist)
+        elif self.distCalType == 2:
+            distance_matrix = np.matrix(self.aStarDist)
+
         permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
 
         # distance_matrix = np.array([
@@ -368,3 +362,20 @@ class TSP:
 
         for obs in obstacles:
             self.addObstacle(obs)
+
+
+    # Main driver function
+    def run(self):
+        res = False
+        if self.distCalType == 1:
+            res = self.calcDubins(1)
+        elif self.distCalType == 2:
+            res = self.calAStar()
+
+        if res: sequence, finalDist = self.calcTSP()
+        else: print('No valid path available')
+
+        if finalDist == float('inf'): print('No valid path available')
+        else:
+            print(finalDist)
+            print(sequence)
