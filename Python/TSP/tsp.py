@@ -63,7 +63,7 @@ class TSP:
     # Calculate the position of RC after backward movement
     def backward(self, pos):
         ax, ay, robOrient = pos
-        backVal = 2
+        backVal = 3
 
         if robOrient == directions['N'] or robOrient == 'N': ay -= backVal
         elif robOrient == directions['E'] or robOrient == 'E': ax -= backVal
@@ -130,7 +130,7 @@ class TSP:
     # Distance is calculated based on 200x200
     def calAStar(self):
         print('Running A*')
-        astarPlanner = AStar((200, 200), 25, self.obstacleList)
+        astarPlanner = AStar((20, 20), 10, 3, self.obstacleList)
         print('Object created')
 
         for start in self.positionsDir:
