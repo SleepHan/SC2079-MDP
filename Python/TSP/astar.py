@@ -121,12 +121,33 @@ class AStar:
             return (float('inf'), None, None)
 
         movCmd = []
+        trimmedPath = [path[0]]
         totalDist = 0
+        straightType = None
+        straightDist = 0
+        straightEnd  = None
         for src, dst in AStar.pairwise(path):
             mv = self.G.get_edge_data(src, dst)['mov']
-            if mv in ['W', 'S']: totalDist += 1
-            else: totalDist += self.turnWeight
+            if mv in ['W', 'S']: 
+                # New straight movement
+                if straightType != mv: 
+                    straightType = mv
 
-            movCmd.append(mv)
+                straightEnd = dst
+                straightDist += 1
+                totalDist += 1
+            else: 
+                # End of straight movement
+                if straightDist > 0:
+                    movCmd.append('{} {}'.format(straightType, straightDist))
+                    trimmedPath.append(straightEnd)
+                    straightDist = 0
+                    straightType = None
+                    straightEnd = None
 
-        return (totalDist, movCmd, path)
+                totalDist += self.turnWeight
+                trimmedPath.append(dst)
+
+                movCmd.append(mv)
+
+        return (totalDist, movCmd, trimmedPath)
