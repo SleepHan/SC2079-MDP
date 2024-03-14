@@ -38,10 +38,9 @@ class TSP:
         self.dubinsDist = []
         self.aStarPath = []
         self.aStarDist = []
-        self.hybridPath = []
-        self.hybridDist = []
         self.turnRad = turnRad
         self.distCalType = distCalType
+        self.commands = None
 
 
     # Positions RC is expected to be in to accurately capture the image of the obstacles
@@ -419,6 +418,10 @@ class TSP:
             self.addObstacle(obs)
 
 
+    def getCommands(self):
+        return self.commands
+
+
     # Main driver function
     def run(self):
         res = False
@@ -428,16 +431,22 @@ class TSP:
             res = self.calAStar()
 
         if res: sequence, finalDist = self.calcTSP()
-        else: print('No valid path available')
+        else: 
+            print('No valid path available')
+            return False
 
-        if finalDist == float('inf'): print('No valid path available')
+        if finalDist == float('inf'): 
+            print('No valid path available')
+            return False
         elif self.distCalType == 1:
-            commands = self.generateCommandsDubins(sequence, len(sequence))
+            self.commands = self.generateCommandsDubins(sequence, len(sequence))
         else:
-            commands = self.generateCommandsAStar(sequence, len(sequence))
+            self.commands = self.generateCommandsAStar(sequence, len(sequence))
 
-        for cmd in commands:
-            print('=========New Path=========')
-            for seg in cmd:
-                print(seg)
-            print('==========================')
+        # for cmd in self.commands:
+        #     print('=========New Path=========')
+        #     for seg in cmd:
+        #         print(seg)
+        #     print('==========================')
+
+        return True

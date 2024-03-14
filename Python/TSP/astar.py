@@ -157,7 +157,7 @@ class AStar:
                         'type':     mv,
                         'start':    src,
                         'end':      dst,
-                        'angle':    np.pi/2,
+                        'angle':    90,
                         'length':   self.turnWeight
                     }
                 )
