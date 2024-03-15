@@ -3,13 +3,14 @@ import numpy as np
 import itertools
 
 class AStar:
-    def __init__(self, dimension, turnRad, obstacles):
+    def __init__(self, dimension, step, turnRad, obstacles):
         self.dimX = dimension[0]
         self.dimY = dimension[1]
         self.turnRad = turnRad
-        self.turnWeight = (np.pi/2) * turnRad
+        self.step = step
+        self.turnWeight = (np.pi/2) * turnRad * 10
         self.G = nx.DiGraph()
-        self.obstacles = [(x*10, y*10) for x, y, _ in obstacles]
+        self.obstacles = [(x, y) for x, y, _ in obstacles]
 
         self.getFriends()
         self.removeInvalid()
@@ -27,7 +28,7 @@ class AStar:
             reverseR =  (x+self.turnRad, y-self.turnRad, 'W')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [1, 1, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
             moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
@@ -44,7 +45,7 @@ class AStar:
             reverseR =  (x-self.turnRad, y+self.turnRad, 'E')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [1, 1, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
             moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
@@ -61,7 +62,7 @@ class AStar:
             reverseR =  (x-self.turnRad, y-self.turnRad, 'N')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [1, 1, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
             moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
@@ -78,7 +79,7 @@ class AStar:
             reverseR =  (x+self.turnRad, y+self.turnRad, 'S')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [1, 1, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
             moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
@@ -93,11 +94,12 @@ class AStar:
         for node in self.G.nodes:
             x, y, facing = node
             for ox, oy in self.obstacles:
-                if (x >= ox - 10 and x <= ox + 10) and (y >= oy - 10 and y <= oy + 10):
+                if (x >= ox - 1 and x <= ox + 1) and (y >= oy - 1 and y <= oy + 1):
                     remList.append(node)
 
-            if x < 10 or y < 10 or x >= 190 or y >= 190:
+            if x < 1 or y < 1 or x > 18 or y > 18:
                 remList.append(node)
+
 
         self.G.remove_nodes_from(remList)
 
@@ -111,22 +113,64 @@ class AStar:
 
     # Getting shortest path using A* from networkx
     def search(self, start, end):
-        startNode = (start[0]*10, start[1]*10, start[2])
-        endNode = (end[0]*10, end[1]*10, end[2])
-
         # Return inf if no path was found
         try:
-            path = nx.astar_path(self.G, startNode, endNode)
+            path = nx.astar_path(self.G, start, end)
         except nx.NetworkXNoPath:
             return (float('inf'), None, None)
 
         movCmd = []
         totalDist = 0
+        straightType = None
+        straightDist = 0
+        straightStart = None
+        straightEnd  = None
         for src, dst in AStar.pairwise(path):
             mv = self.G.get_edge_data(src, dst)['mov']
-            if mv in ['W', 'S']: totalDist += 1
-            else: totalDist += self.turnWeight
+            if mv in ['W', 'S']: 
+                # New straight movement
+                if straightType != mv:
+                    straightStart = src
+                    straightType = mv
 
-            movCmd.append(mv)
+                straightEnd = dst
+                straightDist += self.step
+                totalDist += self.step
+            else: 
+                # End of straight movement
+                if straightDist > 0:
+                    movCmd.append(
+                        {
+                            'type':     straightType,
+                            'start':    straightStart,
+                            'end':      straightEnd,
+                            'length':   straightDist
+                        }
+                    )
+                    straightDist = 0
+                    straightType = None
+                    straightStart = None
+                    straightEnd = None
 
-        return (totalDist, movCmd, path)
+                movCmd.append(
+                    {
+                        'type':     mv,
+                        'start':    src,
+                        'end':      dst,
+                        'angle':    90,
+                        'length':   self.turnWeight
+                    }
+                )
+                totalDist += self.turnWeight
+
+        if straightType is not None:
+            movCmd.append(
+                {
+                    'type':     straightType,
+                    'start':    straightStart,
+                    'end':      straightEnd,
+                    'length':   straightDist
+                }
+            )
+
+        return (totalDist, movCmd)

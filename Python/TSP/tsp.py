@@ -27,7 +27,7 @@ startNode = 0
 endNode = 0
 
 class TSP:
-    def __init__(self, initPosition, dimX, dimY, turnRad):
+    def __init__(self, initPosition, dimX, dimY, turnRad, distCalType):
         self.dimensions = (dimX, dimY)
         self.obstacleList = []
         self.initPositionRad = (initPosition[0], initPosition[1], directions[initPosition[2]])
@@ -35,9 +35,12 @@ class TSP:
         self.positionsRad = [self.initPositionRad]
         self.positionsDir = [self.initPositionDir]
         self.dubinsPath = []
+        self.dubinsDist = []
         self.aStarPath = []
-        self.distance = []
+        self.aStarDist = []
         self.turnRad = turnRad
+        self.distCalType = distCalType
+        self.commands = None
 
 
     # Positions RC is expected to be in to accurately capture the image of the obstacles
@@ -63,7 +66,7 @@ class TSP:
     # Calculate the position of RC after backward movement
     def backward(self, pos):
         ax, ay, robOrient = pos
-        backVal = 2
+        backVal = 3
 
         if robOrient == directions['N'] or robOrient == 'N': ay -= backVal
         elif robOrient == directions['E'] or robOrient == 'E': ax -= backVal
@@ -117,10 +120,9 @@ class TSP:
 
             self.dubinsPath.append(paths)
 
-        self.distance = [[path[0] for path in node] for node in self.dubinsPath]
+        self.dubinsDist = [[path[0] for path in node] for node in self.dubinsPath]
 
-        if any(all(x == float('inf') for x in paths) for paths in self.distance):
-            print('No valid pathing')
+        if any(all(x == float('inf') for x in paths) for paths in self.dubinsDist):
             return False
 
         return True
@@ -130,8 +132,7 @@ class TSP:
     # Distance is calculated based on 200x200
     def calAStar(self):
         print('Running A*')
-        astarPlanner = AStar((200, 200), 25, self.obstacleList)
-        print('Object created')
+        astarPlanner = AStar(self.dimensions, 10, self.turnRad, self.obstacleList)
 
         for start in self.positionsDir:
             origin = start
@@ -159,23 +160,11 @@ class TSP:
 
                 paths[0] = minDist
 
-            print('Node Complete')
             self.aStarPath.append(paths)
 
-        print('===============Path===============')
-        for path in self.aStarPath:
-            print(path)
-        print('==================================')
+        self.aStarDist = [[path[0] for path in node] for node in self.aStarPath]
 
-        self.distance = [[path[0] for path in node] for node in self.aStarPath]
-
-        print('===============Dist===============')
-        for path in self.distance:
-            print(path)
-        print('==================================')
-
-        if any(all(x == float('inf') for x in paths) for paths in self.distance):
-            print('No valid pathing')
+        if any(all(x == float('inf') for x in paths) for paths in self.aStarDist):
             return False
 
         return True
@@ -184,7 +173,11 @@ class TSP:
     # Makes use of the TSP DP library to get the sequence of obstacles to visit
     # Distance will be infinity if unable to find a cycle
     def calcTSP(self):
-        distance_matrix = np.matrix(self.distance)
+        if self.distCalType == 1:
+            distance_matrix = np.matrix(self.dubinsDist)
+        elif self.distCalType == 2:
+            distance_matrix = np.matrix(self.aStarDist)
+
         permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
 
         # distance_matrix = np.array([
@@ -281,14 +274,13 @@ class TSP:
     # Gives the details of each path selected for the Hamiltonian cycle
     # Generates the commands to send to STM
     # Gives the start and end coordinates for the Android side (Unrounded)
-    def generateCommands(self, seq, num):
+    def generateCommandsDubins(self, seq, num):
         index = [(i, (i+1)%num) for i in range(num)]
         fullPath = []
         currentPos = None
 
         # Getting path from start to end
         for start, end in index:
-            print('===============New Path===============')
             segment = []
             segStart = None
             segEnd = None
@@ -296,15 +288,24 @@ class TSP:
             # Getting node index and path info
             startNode = seq[start]
             endNode = seq[end]
-            dist, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
+            _, dubPath, pathPts, config = self.dubinsPath[startNode][endNode]
 
             zipped = [(config[0], dubPath[0], pathPts[0]), (config[1], dubPath[2], pathPts[1]), (config[2], dubPath[1], pathPts[2])]
             print('{} -> {}'.format(self.positionsRad[startNode] if currentPos is None else currentPos, self.positionsRad[endNode]))
 
             if currentPos is not None:
-                print('Back: 2')
-                print('Actual Length: 20\n')
-                segment.append(['B', 2, 20, currentPos, pathPts[0][0]])
+                # print('Back: 2')
+                # print('Actual Length: 20\n')
+                segment.append(
+                        {
+                            'type':     'S',
+                            'start':    currentPos,
+                            'end':      pathPts[0][0],
+                            'length':   20
+                        }
+                    )
+
+                # segment.append(['S', 2, 20, currentPos, pathPts[0][0]])
 
             # Going through each segment of path
             for segType, length, pathCoor in zipped:
@@ -314,25 +315,72 @@ class TSP:
                 if segStart is None: segStart = startCoor if currentPos is None else currentPos
 
                 if segType == 'l':
-                    print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
-                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['L', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
-                elif segType == 'r':
-                    print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
-                    print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
-                    segment.append(['R', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
-                else:
-                    print('Straight: {}'.format(length))
-                    print('Actual Length: {}\n'.format(length*10))
-                    segment.append(['S', length, length*10, startCoor, endCoor])
+                    # print('Left: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    # print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segment.append(
+                        {
+                            'type':     'AW',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'angle':    math.degrees(abs(length)),
+                            'length':   self.turnRad*(abs(length))*10
+                        }
+                    )
 
-            print('\nFull Distance; {}\n'.format(dist))
+                    # segment.append(['AW', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                elif segType == 'r':
+                    # print('Right: {} rad, {}'.format(length, self.turnRad*(abs(length))))
+                    # print('Actual Length: {}\n'.format(self.turnRad*abs(length)*10))
+                    segment.append(
+                        {
+                            'type':     'DW',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'angle':    math.degrees(abs(length)),
+                            'length':   self.turnRad*(abs(length))*10
+                        }
+                    )
+
+                    # segment.append(['DW', math.degrees(abs(length)), self.turnRad*(abs(length))*10, startCoor, endCoor])
+                else:
+                    # print('Straight: {}'.format(length))
+                    # print('Actual Length: {}\n'.format(length*10))
+                    segment.append(
+                        {
+                            'type':     'W',
+                            'start':    startCoor,
+                            'end':      endCoor,
+                            'length':   length*10
+                        }
+                    )
+
+                    # segment.append(['W', length, length*10, startCoor, endCoor])
+
+            # print('\nFull Distance; {}\n'.format(dist))
 
             currentPos = endCoor
             segEnd = endCoor
             obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
-            fullPath.append([segment, segStart, segEnd, obstacle])
+            fullPath.append((segment, segStart, segEnd, obstacle))
         
+        return fullPath
+
+
+    def generateCommandsAStar(self, seq, num):
+        index = [(i, (i+1)%num) for i in range(num)]
+        fullPath = []
+
+        for start, end in index:
+            # Getting node index and path info
+            startNode = seq[start]
+            endNode = seq[end]
+            _, cmd = self.aStarPath[startNode][endNode]
+            segStart = cmd[0]['start']
+            segEnd = cmd[-1]['end']
+            
+            obstacle = self.obstacleList[endNode-1] if endNode != 0 else segEnd
+            fullPath.append((cmd, segStart, segEnd, obstacle))
+
         return fullPath
 
 
@@ -368,3 +416,37 @@ class TSP:
 
         for obs in obstacles:
             self.addObstacle(obs)
+
+
+    def getCommands(self):
+        return self.commands
+
+
+    # Main driver function
+    def run(self):
+        res = False
+        if self.distCalType == 1:
+            res = self.calcDubins(1)
+        elif self.distCalType == 2:
+            res = self.calAStar()
+
+        if res: sequence, finalDist = self.calcTSP()
+        else: 
+            print('No valid path available')
+            return False
+
+        if finalDist == float('inf'): 
+            print('No valid path available')
+            return False
+        elif self.distCalType == 1:
+            self.commands = self.generateCommandsDubins(sequence, len(sequence))
+        else:
+            self.commands = self.generateCommandsAStar(sequence, len(sequence))
+
+        # for cmd in self.commands:
+        #     print('=========New Path=========')
+        #     for seg in cmd:
+        #         print(seg)
+        #     print('==========================')
+
+        return True

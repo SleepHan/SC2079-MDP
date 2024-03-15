@@ -3,19 +3,17 @@ import numpy as np
 
 # Create TSP object - TSP(StartPos, XLen, YLen, TurnRad)
 print('Start')
-tsp = TSP((1, 1, 'N'), 20, 20, 2.5)
+tsp = TSP((1, 1, 'N'), 20, 20, 3, 1)
 tsp.testObstacles(4)
-# print(tsp.obstacleList)
-# print(tsp.positionsDir)
 
-res = tsp.calAStar()
+res = tsp.run()
 
-if res:
-    seq, dist = tsp.calcTSP()
-    print(dist)
-    print(seq)
-else:
-    print('No valid path')
+# if res:
+#     seq, dist = tsp.calcTSP()
+#     print(dist)
+#     print(seq)
+# else:
+#     print('No valid path')
 
 # Calculate path dist - calcDubins(Step)
 # res = tsp.calcDubins(1)
