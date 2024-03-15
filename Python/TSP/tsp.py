@@ -27,19 +27,40 @@ startNode = 0
 endNode = 0
 
 class TSP:
-    def __init__(self, initPosition, dimX, dimY, turnRad, distCalType):
-        self.dimensions = (dimX, dimY)
+    '''
+    initPosition    - Coordinates & Bearing of initial position of RC
+    dimX            - Length of x-axis
+    dimY            - Length of y-axis
+    step            - Distance between each coordinate
+    turnRad         - Rounded-off turning radius of RC
+    offV            - Rounded-off vertical displacement of turn
+    offH            - Rounded-off horizontal displacement of turn
+    corV            - Vertical displacement correction for rounding off
+    corH            - Horizontal displacement correction for rounding off
+    disCalType      - Type of path algorithm to use (A* / Dubins)
+    '''
+    def __init__(self, initPosition, dimX, dimY, step, turnRad, offV, offH, corV, corH, distCalType):
+        # Matching parameters to attributes
+        self.dimensions = (dimX // step, dimY // step)
+        self.step =step
+        self.turnRad = turnRad
+        self.offV = offV
+        self.offH = offH
+        self.corV = corV
+        self.corH = corH
+        self.distCalType = distCalType
+
+        # Initialising of required attributes to use later
+        self.coorCorrection = 10 // self.step
         self.obstacleList = []
-        self.initPositionRad = (initPosition[0], initPosition[1], directions[initPosition[2]])
-        self.initPositionDir = (initPosition[0], initPosition[1], initPosition[2])
+        self.initPositionRad = (initPosition[0]*self.coorCorrection, initPosition[1]*self.coorCorrection, directions[initPosition[2]])
+        self.initPositionDir = (initPosition[0]*self.coorCorrection, initPosition[1]*self.coorCorrection, initPosition[2])
         self.positionsRad = [self.initPositionRad]
         self.positionsDir = [self.initPositionDir]
         self.dubinsPath = []
         self.dubinsDist = []
         self.aStarPath = []
         self.aStarDist = []
-        self.turnRad = turnRad
-        self.distCalType = distCalType
         self.commands = None
 
 
@@ -58,8 +79,8 @@ class TSP:
         else: ax -= 2
         
         orient = robotPositions[obsOrient]
-        finalPosRad = (ax, ay, directions[orient])
-        finalPosDir = (ax, ay, orient)
+        finalPosRad = (ax*self.coorCorrection, ay*self.coorCorrection, directions[orient])
+        finalPosDir = (ax*self.coorCorrection, ay*self.coorCorrection, orient)
         return finalPosRad, finalPosDir
 
 
@@ -78,7 +99,7 @@ class TSP:
 
     # Expected input for obs = (x, y, orien)
     def addObstacle(self, obs):
-        self.obstacleList.append(obs)
+        self.obstacleList.append((obs[0]*self.coorCorrection, obs[1]*self.coorCorrection, obs[2]))
         posRad, posDir = self.expectedPos(obs)
         self.positionsRad.append(posRad)
         self.positionsDir.append(posDir)
@@ -110,8 +131,8 @@ class TSP:
 
             if origin != self.initPositionRad:
                 minDist = [float('inf')]
-                for x in range(1, 2):
-                    for y in range(1, 2):
+                for x in range(1, 3):
+                    for y in range(1, 3):
                         for _, angle in directions.items():
                             pathing = local_planner.dubins_path(start, (x, y, angle))
                             if pathing[0] < minDist[0]: minDist = pathing
@@ -132,7 +153,7 @@ class TSP:
     # Distance is calculated based on 200x200
     def calAStar(self):
         print('Running A*')
-        astarPlanner = AStar(self.dimensions, 10, self.turnRad, self.obstacleList)
+        astarPlanner = AStar(self.dimensions, self.step, self.offV, self.offH, self.corV, self.corH, self.obstacleList)
 
         for start in self.positionsDir:
             origin = start
@@ -152,8 +173,10 @@ class TSP:
             # Return back to start
             if origin != self.initPositionDir:
                 minDist = (float('inf'), None, None)
-                for x in range(1, 2):
-                    for y in range(1, 2):
+                limit = 10 // self.step
+                maxBound = (40 // self.step) - 1
+                for x in range(0+limit, maxBound-limit):
+                    for y in range(0+limit, maxBound-limit):
                         for key in directions.keys():
                             pathing = astarPlanner.search(start, (x, y, key))
                             if pathing[0] < minDist[0]: minDist = pathing
