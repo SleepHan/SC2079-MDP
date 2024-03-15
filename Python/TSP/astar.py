@@ -19,7 +19,7 @@ class AStar:
     # Getting all possible future nodes for each grid
     def getFriends(self):
         weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
-        moves = ['W', 'S', 'A', 'D', 'F', 'H']
+        moves = ['W', 'T', 'A', 'D', 'F', 'H']
 
         for x, y in np.stack(np.meshgrid(np.arange(self.dimX), np.arange(self.dimY))).reshape((2, -1)).T:
             src =     (x, y, 'N')
@@ -122,7 +122,7 @@ class AStar:
         straightEnd  = None
         for src, dst in AStar.pairwise(path):
             mv = self.G.get_edge_data(src, dst)['mov']
-            if mv in ['W', 'S']: 
+            if mv in ['W', 'T']: 
                 # New straight movement
                 if straightType != mv:
                     straightStart = src
