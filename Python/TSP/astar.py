@@ -18,6 +18,9 @@ class AStar:
 
     # Getting all possible future nodes for each grid
     def getFriends(self):
+        weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+        moves = ['W', 'S', 'A', 'D', 'F', 'H']
+
         for x, y in np.stack(np.meshgrid(np.arange(self.dimX), np.arange(self.dimY))).reshape((2, -1)).T:
             src =     (x, y, 'N')
             forwards =  (x, y+1, 'N')
@@ -28,8 +31,6 @@ class AStar:
             reverseR =  (x+self.turnRad, y-self.turnRad, 'W')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
-            moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
             self.G.add_node(src)
@@ -45,8 +46,6 @@ class AStar:
             reverseR =  (x-self.turnRad, y+self.turnRad, 'E')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
-            moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
             self.G.add_node(src)
@@ -62,8 +61,6 @@ class AStar:
             reverseR =  (x-self.turnRad, y-self.turnRad, 'N')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
-            moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
             self.G.add_node(src)
@@ -79,8 +76,6 @@ class AStar:
             reverseR =  (x+self.turnRad, y+self.turnRad, 'S')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
-            moves = ['W', 'S', 'AW', 'DW', 'AS', 'DS']
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
 
             self.G.add_node(src)
@@ -156,11 +151,27 @@ class AStar:
                     {
                         'type':     mv,
                         'start':    src,
-                        'end':      dst,
                         'angle':    90,
                         'length':   self.turnWeight
                     }
                 )
+
+                if mv in ['A', 'D']:
+                    movCmd.append(
+                        {
+                            'type':     'W',
+                            'end':      dst,
+                            'length':   5
+                        }
+                    )
+                else:
+                    movCmd.append(
+                        {
+                            'type':     'S',
+                            'end':      dst,
+                            'length':   5
+                        }
+                    )
                 totalDist += self.turnWeight
 
         if straightType is not None:
