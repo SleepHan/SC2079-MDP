@@ -8,10 +8,10 @@ tsp = TSP(
         dimY=200, 
         step=10, 
         turnRad=3, 
-        offV=2, 
-        offH=3, 
-        corV=2, 
-        corH=0,
+        offFV=2, 
+        offFH=3, 
+        offRV=3, 
+        offRH=2,
         distCalType=2
     )
 tsp.testObstacles(2)

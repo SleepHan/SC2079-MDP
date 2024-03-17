@@ -33,21 +33,21 @@ class TSP:
     dimY            - Length of y-axis
     step            - Distance between each coordinate
     turnRad         - Rounded-off turning radius of RC
-    offV            - Rounded-off vertical displacement of turn
-    offH            - Rounded-off horizontal displacement of turn
-    corV            - Vertical displacement correction for rounding off
-    corH            - Horizontal displacement correction for rounding off
+    offFV           - Rounded-off forward vertical displacement of turn
+    offFH           - Rounded-off forward horizontal displacement of turn
+    offRV           - Rounded-off backward vertical displacement of turn
+    offRH           - Rounded-off backward horizontal displacement of turn
     disCalType      - Type of path algorithm to use (A* / Dubins)
     '''
-    def __init__(self, initPosition, dimX, dimY, step, turnRad, offV, offH, corV, corH, distCalType):
+    def __init__(self, initPosition, dimX, dimY, step, turnRad, offFV, offFH, offRV, offRH, distCalType):
         # Matching parameters to attributes
         self.dimensions = (dimX // step, dimY // step)
         self.step =step
         self.turnRad = turnRad
-        self.offV = offV
-        self.offH = offH
-        self.corV = corV
-        self.corH = corH
+        self.offFV = offFV
+        self.offFH = offFH
+        self.offRV = offRV
+        self.offRH = offRH
         self.distCalType = distCalType
 
         # Initialising of required attributes to use later
@@ -153,7 +153,15 @@ class TSP:
     # Distance is calculated based on 200x200
     def calAStar(self):
         print('Running A*')
-        astarPlanner = AStar(self.dimensions, self.step, self.offV, self.offH, self.corV, self.corH, self.obstacleList)
+        astarPlanner = AStar(
+            dimension=self.dimensions, 
+            step=self.step, 
+            offFV=self.offFV, 
+            offFH=self.offFH, 
+            offRV=self.offRV, 
+            offRH=self.offRH, 
+            obstacles=self.obstacleList
+        )
 
         for start in self.positionsDir:
             origin = start

@@ -20,16 +20,16 @@ class AStar:
     corH        - Horizontal displacement correction to round off
     obstacles   - List of obstacles on the map
     '''
-    def __init__(self, dimension, step, offV, offH, corV, corH, obstacles):
+    def __init__(self, dimension, step, offFV, offFH, offRV, offRH, obstacles):
         self.dimX = dimension[0]
         self.dimY = dimension[1]
-        # self.turnRad = turnRad
         self.step = step
-        self.offV = offV
-        self.offH = offH
-        self.corV = corV
-        self.corH = corH
-        self.turnWeight = calcTurnWeight(offV*step, offH*step)
+        self.offFV = offFV
+        self.offFH = offFH
+        self.offRV = offRV
+        self.offRH = offRH
+        self.fwdTurnWeight = calcTurnWeight(offFV*step, offFH*step)
+        self.bwdTurnWeight = calcTurnWeight(offRV*step, offRH*step)
         self.G = nx.DiGraph()
         self.obstacles = [(x, y) for x, y, _ in obstacles]
 
@@ -39,17 +39,17 @@ class AStar:
 
     # Getting all possible future nodes for each grid
     def getFriends(self):
-        weights = [self.step, self.step, self.turnWeight, self.turnWeight, self.turnWeight, self.turnWeight]
+        weights = [self.step, self.step, self.fwdTurnWeight, self.fwdTurnWeight, self.bwdTurnWeight, self.bwdTurnWeight]
         moves = ['W', 'T', 'A', 'D', 'F', 'H']
 
         for x, y in np.stack(np.meshgrid(np.arange(self.dimX), np.arange(self.dimY))).reshape((2, -1)).T:
             src =     (x, y, 'N')
             forwards =  (x, y+1, 'N')
             reverse =   (x, y-1, 'N')
-            forwardsL = (x-self.offH, y+self.offV, 'W')
-            forwardsR = (x+self.offH, y+self.offV, 'E')
-            reverseL =  (x-self.offH, y-self.offV, 'E')
-            reverseR =  (x+self.offH, y-self.offV, 'W')
+            forwardsL = (x-self.offFH, y+self.offFV, 'W')
+            forwardsR = (x+self.offFH, y+self.offFV, 'E')
+            reverseL =  (x-self.offRH, y-self.offRV, 'E')
+            reverseR =  (x+self.offRH, y-self.offRV, 'W')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
@@ -61,10 +61,10 @@ class AStar:
             src =     (x, y, 'S')
             forwards =  (x, y-1, 'S')
             reverse =   (x, y+1, 'S')
-            forwardsL = (x+self.offH, y-self.offV, 'E')
-            forwardsR = (x-self.offH, y-self.offV, 'W')
-            reverseL =  (x+self.offH, y+self.offV, 'W')
-            reverseR =  (x-self.offH, y+self.offV, 'E')
+            forwardsL = (x+self.offFH, y-self.offFV, 'E')
+            forwardsR = (x-self.offFH, y-self.offFV, 'W')
+            reverseL =  (x+self.offRH, y+self.offRV, 'W')
+            reverseR =  (x-self.offRH, y+self.offRV, 'E')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
@@ -76,10 +76,10 @@ class AStar:
             src =      (x, y, 'E')
             forwards =  (x+1, y, 'E')
             reverse =   (x-1, y, 'E')
-            forwardsL = (x+self.offV, y+self.offH, 'N')
-            forwardsR = (x+self.offV, y-self.offH, 'S')
-            reverseL =  (x-self.offV, y+self.offH, 'S')
-            reverseR =  (x-self.offV, y-self.offH, 'N')
+            forwardsL = (x+self.offFV, y+self.offFH, 'N')
+            forwardsR = (x+self.offFV, y-self.offFH, 'S')
+            reverseL =  (x-self.offRV, y+self.offRH, 'S')
+            reverseR =  (x-self.offRV, y-self.offRH, 'N')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
@@ -91,10 +91,10 @@ class AStar:
             src =     (x, y, 'W')
             forwards =  (x-1, y, 'W')
             reverse =   (x+1, y, 'W')
-            forwardsL = (x-self.offV, y-self.offH, 'S')
-            forwardsR = (x-self.offV, y+self.offH, 'N')
-            reverseL =  (x+self.offV, y-self.offH, 'N')
-            reverseR =  (x+self.offV, y+self.offH, 'S')
+            forwardsL = (x-self.offFV, y-self.offFH, 'S')
+            forwardsR = (x-self.offFV, y+self.offFH, 'N')
+            reverseL =  (x+self.offRV, y-self.offRH, 'N')
+            reverseR =  (x+self.offRV, y+self.offRH, 'S')
 
             friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
             friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
@@ -105,10 +105,11 @@ class AStar:
 
 
     # Removing any cells that should not be accessible (Obstacle/Boundary)
+    # Note that the coordinates of the obstacle represent the bottom left-corner of the obstacle
     def removeInvalid(self):
         remList = []
         for node in self.G.nodes:
-            x, y, facing = node
+            x, y, _ = node
             # 40x40 grid (Each grid is 5x5)
             if self.step == 5:
                 for ox, oy in self.obstacles:
@@ -122,7 +123,7 @@ class AStar:
             # 20x20 grid (Each grid is 10x10)
             else:
                 for ox, oy in self.obstacles:
-                    if (x >= ox - 1 and x <= ox + 1) and (y >= oy - 1 and y <= oy + 1):
+                    if (x >= ox - 1 and x <= ox + 2) and (y >= oy - 1 and y <= oy + 2):
                         remList.append(node)
 
                 if x < 1 or y < 1 or x > 18 or y > 18:
@@ -180,58 +181,22 @@ class AStar:
                     straightType = None
                     straightStart = None
                     straightEnd = None
-
-                # Check for vertical adjustment
-                if self.corV > 0:
-                    if mv in ['A', 'D']:
-                        movCmd.append(
-                            {
-                                'type':     'W',
-                                'start':    src,
-                                'length':   self.corV
-                            }
-                        )
-                    else:
-                        movCmd.append(
-                            {
-                                'type':     'T',
-                                'start':    src,
-                                'length':   self.corV
-                            }
-                        )
                 
+                if mv in ['A', 'D']: turnWeight = self.fwdTurnWeight
+                else: turnWeight = self.bwdTurnWeight
+
                 # Start of turn movement
                 movCmd.append(
                     {
                         'type':     mv,
                         'start':    src,
+                        'end':      dst,
                         'angle':    90,
-                        'length':   self.turnWeight
+                        'length':   turnWeight
                     }
                 )
-
-                # Check for horizontal adjustment
-                if self.corH > 0:
-                    if mv in ['A', 'D']:
-                        movCmd.append(
-                            {
-                                'type':     'W',
-                                'end':      dst,
-                                'length':   self.corH
-                            }
-                        )
-                    else:
-                        movCmd.append(
-                            {
-                                'type':     'T',
-                                'end':      dst,
-                                'length':   self.corH
-                            }
-                        )
-                else:
-                    movCmd[-1]['end'] = dst
                 
-                totalDist += self.turnWeight
+                totalDist += turnWeight
 
         if straightType is not None:
             movCmd.append(
