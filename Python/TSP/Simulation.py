@@ -1,10 +1,9 @@
 from tsp import TSP
-import numpy as np
 
 # Create TSP object - TSP(StartPos, XLen, YLen, Step, TurnRad, V-Offset, H-Offset, V-Ajust, H-Adjust, CalType)
 print('Start')
-tsp = TSP((1, 1, 'N'), 200, 200, 10, 3, 3, 3, 0.5, 0, 2)
-tsp.testObstacles(4)
+tsp = TSP((1, 1, 'N'), 200, 200, 10, 3, 3, 3, 5, 0, 2)
+tsp.testObstacles(2)
 
 res = tsp.run()
 

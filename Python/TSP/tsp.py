@@ -196,6 +196,7 @@ class TSP:
     # Makes use of the TSP DP library to get the sequence of obstacles to visit
     # Distance will be infinity if unable to find a cycle
     def calcTSP(self):
+        print('Running TSP')
         if self.distCalType == 1:
             distance_matrix = np.matrix(self.dubinsDist)
         elif self.distCalType == 2:

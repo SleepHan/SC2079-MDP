@@ -188,7 +188,7 @@ class AStar:
                             {
                                 'type':     'W',
                                 'start':    src,
-                                'length':   int(self.corV*self.step)
+                                'length':   self.corV
                             }
                         )
                     else:
@@ -196,7 +196,7 @@ class AStar:
                             {
                                 'type':     'T',
                                 'start':    src,
-                                'length':   int(self.corV*self.step)
+                                'length':   self.corV
                             }
                         )
                 
@@ -217,7 +217,7 @@ class AStar:
                             {
                                 'type':     'W',
                                 'end':      dst,
-                                'length':   int(self.corH*self.step)
+                                'length':   self.corH
                             }
                         )
                     else:
@@ -225,7 +225,7 @@ class AStar:
                             {
                                 'type':     'T',
                                 'end':      dst,
-                                'length':   int(self.corH*self.step)
+                                'length':   self.corH
                             }
                         )
                 else:
