@@ -2,7 +2,18 @@ from tsp import TSP
 
 # Create TSP object - TSP(StartPos, XLen, YLen, Step, TurnRad, V-Offset, H-Offset, V-Ajust, H-Adjust, CalType)
 print('Start')
-tsp = TSP((1, 1, 'N'), 200, 200, 10, 3, 3, 3, 5, 0, 2)
+tsp = TSP(
+        initPosition=(1, 1, 'N'), 
+        dimX=200, 
+        dimY=200, 
+        step=10, 
+        turnRad=3, 
+        offV=2, 
+        offH=3, 
+        corV=2, 
+        corH=0,
+        distCalType=2
+    )
 tsp.testObstacles(2)
 
 res = tsp.run()

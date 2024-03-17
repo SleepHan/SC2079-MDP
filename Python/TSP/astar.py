@@ -140,7 +140,7 @@ class AStar:
     
 
     # Getting shortest path using A* from networkx
-    def search(self, start, end):
+    def search(self, start, end, endBack=None):
         # Return inf if no path was found
         try:
             path = nx.astar_path(self.G, start, end)
@@ -240,6 +240,16 @@ class AStar:
                     'start':    straightStart,
                     'end':      straightEnd,
                     'length':   straightDist
+                }
+            )
+
+        if endBack is not None:
+            movCmd.append(
+                {
+                    'type':     'T',
+                    'start':    straightEnd if straightEnd is not None else dst,
+                    'end':      endBack,
+                    'length':   30
                 }
             )
 

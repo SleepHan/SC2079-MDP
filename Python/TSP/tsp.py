@@ -73,8 +73,8 @@ class TSP:
     def expectedPos(self, obstacle):
         ax, ay, obsOrient = obstacle
 
-        if obsOrient == 'N': ay += 2
-        elif obsOrient == 'E': ax += 2
+        if obsOrient == 'N': ay += 3
+        elif obsOrient == 'E': ax += 3
         elif obsOrient == 'S': ay -= 2
         else: ax -= 2
         
@@ -167,7 +167,7 @@ class TSP:
                     paths.append((float('inf'), None, None))
                 else:
                     # Tuple: (Total_Dist, Movement_Command, Nodes_with_Orientation)
-                    pathing = astarPlanner.search(start, dst)
+                    pathing = astarPlanner.search(start, dst, self.backward(dst))
                     paths.append(pathing)
 
             # Return back to start
