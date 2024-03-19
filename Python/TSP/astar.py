@@ -14,10 +14,10 @@ class AStar:
     '''
     dimension   - (Length of x-axis, Length of y-axis)
     step        - Length of each grid (Same for x- and y-axis)
-    offV        - Vertical displacement of turn
-    offH        - Horizontal displacement of turn
-    corV        - Vertical displacement correction to round off
-    corH        - Horizontal displacement correction to round off
+    offFV       - Forward vertical displacement of turn
+    offFH       - Forward horizontal displacement of turn
+    offRV       - Reverse vertical displacement of turn
+    offRH       - Reverse horizontal displacement of turn
     obstacles   - List of obstacles on the map
     '''
     def __init__(self, dimension, step, offFV, offFH, offRV, offRH, obstacles):
@@ -113,12 +113,11 @@ class AStar:
             # 40x40 grid (Each grid is 5x5)
             if self.step == 5:
                 for ox, oy in self.obstacles:
-                    if (x >= ox - 2 and x <= ox + 3) and (y >= oy - 2 and y <= oy + 3):
+                    if (x >= ox - 2 and x <= ox + 4) and (y >= oy - 2 and y <= oy + 4):
                         remList.append(node)
                     
-                    if x < 2 or y < 2 or x > 37 or y > 37:
-                        
-                        remList.append(node)
+                if x < 2 or y < 2 or x > 37 or y > 37:
+                    remList.append(node)
 
             # 20x20 grid (Each grid is 10x10)
             else:
@@ -145,8 +144,11 @@ class AStar:
         # Return inf if no path was found
         try:
             path = nx.astar_path(self.G, start, end)
-        except (nx.NetworkXNoPath, nx.NodeNotFound) as error:
-            # print(error)
+        except nx.NetworkXNoPath as error:
+            print('No path: ', error)
+            return (float('inf'), None, None)
+        except nx.NodeNotFound as error:
+            print('Node removed: ', error)
             return (float('inf'), None, None)
 
         movCmd = []

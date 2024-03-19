@@ -87,7 +87,7 @@ class TSP:
     # Calculate the position of RC after backward movement
     def backward(self, pos):
         ax, ay, robOrient = pos
-        backVal = 3
+        backVal = 0
 
         if robOrient == directions['N'] or robOrient == 'N': ay -= backVal
         elif robOrient == directions['E'] or robOrient == 'E': ax -= backVal
@@ -175,7 +175,7 @@ class TSP:
                     paths.append((float('inf'), None, None))
                 else:
                     # Tuple: (Total_Dist, Movement_Command, Nodes_with_Orientation)
-                    pathing = astarPlanner.search(start, dst, self.backward(dst))
+                    pathing = astarPlanner.search(start, dst)
                     paths.append(pathing)
 
             # Return back to start
@@ -438,11 +438,15 @@ class TSP:
         elif choice == 3:
             obstacles = [(1, 18, 'S'), (6, 12, 'N'), (10, 7, 'E'), (15, 16, 'S'), (19, 9, 'W'), (13, 2, 'W')]
         elif choice == 4:
-            obstacles = [(1, 14, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
+            obstacles = [(1, 16, 'E'), (5, 12, 'S'), (8, 5, 'N'), (11, 14, 'E'), (15, 2, 'W'), (16, 19, 'S'), (19, 9, 'W')]
         elif choice == 5:
             obstacles = [(1, 14, 'E')]
         elif choice == 6:
             obstacles = [(10, 10, 'S')]
+        elif choice == 7:
+            obstacles = [(15, 2, 'W'), (1, 16, 'E'), (8, 5, 'N'), (19, 9, 'W'), (5, 12, 'S'), (11, 14, 'W'), (16, 19, 'S'), (10, 9, 'W')]
+        elif choice == 8:
+            obstacles = [(3, 16, 'W'), (4, 10, 'S'), (8, 5, 'N'), (10, 9, 'W'), (12, 15, 'E'), (15, 4, 'W'), (19, 8, 'W'), (18, 19, 'S')]
         else:
             obstacles = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 

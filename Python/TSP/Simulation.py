@@ -3,7 +3,7 @@ from tsp import TSP
 # Create TSP object - TSP(StartPos, XLen, YLen, Step, TurnRad, V-Offset, H-Offset, V-Ajust, H-Adjust, CalType)
 print('Start')
 tsp = TSP(
-        initPosition=(1, 1, 'N'), 
+        initPosition=(2, 2, 'N'), 
         dimX=200, 
         dimY=200, 
         step=10, 
@@ -14,7 +14,7 @@ tsp = TSP(
         offRH=2,
         distCalType=2
     )
-tsp.testObstacles(2)
+tsp.testObstacles(8)
 
 res = tsp.run()
 
