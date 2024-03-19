@@ -210,16 +210,8 @@ def main_loop():
 	# will stop 30cm before obstacle?
  
 	# Keep track of the forward distance from the carpark to the first obstacle
-	hcounter1 = 0 
-	hcounter2 = 0
-	vcounter2 = 0
-	init = ['W1000']
+	init = ['W9000']
 	
-	# idea
- 	# measure the distance from carpark to first obstacle in 10s
-	while (): #(receive from stm)
-		perform_stm_write(init[0])
-		hcounter1+=1
 	
 	"""CHANGE ACCORDINGLY, TESTING"""
 	# img1 = "left_arrow"
@@ -228,11 +220,6 @@ def main_loop():
 	img1 = perform_classification()
 	print(f'image1:{img1}')
  
-	"""continue moving forward if there is no image detected"""
-	# while img1 == "":
-	# 	perform_stm_write(init[0])
-	# 	img1 = perform_classification()
-	# 	print(f'image1:{img1}')
 
 	if "right_arrow" in img1:
 		for instr in case_r:
@@ -250,10 +237,6 @@ def main_loop():
 		# img2 =  perform_classification()
 		# print(f'got img2:{img2}')
 	
-	# measure the distance from carpark to second obstacle in 10s
-	while (): #(receive from stm)
-		perform_stm_write(init[0])
-		hcounter2+=1
   
 	img2 =  perform_classification()
 	print(f'got img2:{img2}')
@@ -261,10 +244,6 @@ def main_loop():
 	# Checking if the first image is left and the second image is left.
 	if "left_arrow" in img2:
 		# turn left first
-		perform_stm_write('A9090')
-		while (): #(receive from stm)
-				perform_stm_write(init[0])
-				vcounter2+=1
 		for instr in case_2l:
 			perform_stm_write(instr)
 
@@ -272,10 +251,6 @@ def main_loop():
 	# Checking if the first image is left and the second image is right.
 	if "right_arrow" in img2:
 		# turn right first
-		perform_stm_write('A9090')
-		while (): #(receive from stm)
-				perform_stm_write(init[0])
-				vcounter2+=1
 		for instr in case_2r:
 			perform_stm_write(instr)
 
