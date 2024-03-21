@@ -32,76 +32,198 @@ class AStar:
         self.bwdTurnWeight = calcTurnWeight(offRV*step, offRH*step)
         self.G = nx.DiGraph()
         self.obstacles = [(x, y) for x, y, _ in obstacles]
+        self.invalid = self.getInvalidNodes()
 
         self.getFriends()
         self.removeInvalid()
 
 
+    # Getting nodes that are not traversable
+    def getInvalidNodes(self):
+        invalid = []
+        for obs in self.obstacles:
+            x, y = obs
+            invalid += [(x+offX, y+offY) for offX in range(-1, 2) for offY in range(-1, 2)]
+
+        return invalid
+
+
+    # Checking if move is valid
+    def validMove(self, node, xMove, yMove):
+        # Num of cells moved = xMove + yMove
+        # N/S -> Update Y-coor -> Update X-coor
+        # E/W -> Update X-coor -> Update Y-coor
+        x, y, face = node
+        traversed = [(x, y)]
+        if face in ['N', 'Y']:
+            if yMove > 0:
+                for offY in range(1, yMove+1):
+                    traversed.append((x, y+offY))
+            else:
+                for offY in range(0, yMove-1, -1):
+                    traversed.append((x, y+offY))
+
+            if xMove > 0:
+                for offX in range(1, xMove+1):
+                    traversed.append((x+offX, y+offY))
+            else:
+                for offX in range(0, xMove-1, -1):
+                    traversed.append((x+offX, y+offY))
+        else:
+            if xMove > 0:
+                for offX in range(1, xMove+1):
+                    traversed.append((x+offX, y))
+            else:
+                for offX in range(0, xMove-1, -1):
+                    traversed.append((x+offX, y))
+
+            if yMove > 0:
+                for offY in range(1, yMove+1):
+                    traversed.append((x+offX, y+offY))
+            else:
+                for offY in range(0, yMove-1, -1):
+                    traversed.append((x+offX, y+offY))
+        
+        # if any(bad in traversed for bad in self.invalid):
+        #     print('INVALID')
+        #     return False
+        # return True
+        return not any(bad in traversed for bad in self.invalid)
+
+
     # Getting all possible future nodes for each grid
     def getFriends(self):
-        weights = [self.step, self.step, self.fwdTurnWeight, self.fwdTurnWeight, self.bwdTurnWeight, self.bwdTurnWeight]
-        moves = ['W', 'T', 'A', 'D', 'F', 'H']
-
         for x, y in np.stack(np.meshgrid(np.arange(self.dimX), np.arange(self.dimY))).reshape((2, -1)).T:
+            # Starting North
             src =     (x, y, 'N')
+            self.G.add_node(src)
+
             forwards =  (x, y+1, 'N')
+            self.G.add_node(forwards)
+            self.G.add_edge(src, forwards, weight=self.step, mov='W')
+
             reverse =   (x, y-1, 'N')
-            forwardsL = (x-self.offFH, y+self.offFV, 'W')
-            forwardsR = (x+self.offFH, y+self.offFV, 'E')
-            reverseL =  (x-self.offRH, y-self.offRV, 'E')
-            reverseR =  (x+self.offRH, y-self.offRV, 'W')
+            self.G.add_node(reverse)
+            self.G.add_edge(src, reverse, weight=self.step, mov='T')
 
-            friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
+            if (self.validMove(src, -self.offFH, self.offFV)):
+                forwardsL = (x-self.offFH, y+self.offFV, 'W')
+                self.G.add_node(forwardsL)
+                self.G.add_edge(src, forwardsL, weight=self.fwdTurnWeight, mov='A')
+            
+            if (self.validMove(src, self.offFH, self.offFV)):
+                forwardsR = (x+self.offFH, y+self.offFV, 'E')
+                self.G.add_node(forwardsR)
+                self.G.add_edge(src, forwardsR, weight=self.fwdTurnWeight, mov='D')
 
-            self.G.add_node(src)
-            self.G.add_nodes_from(friend_nodes)
-            self.G.add_edges_from([(src, i, attrib_dict) for i, attrib_dict in zip(friend_nodes, friend_dicts)])
+            if (self.validMove(src, -self.offRH, -self.offRV)):
+                reverseL =  (x-self.offRH, y-self.offRV, 'E')
+                self.G.add_node(reverseL)
+                self.G.add_edge(src, reverseL, weight=self.bwdTurnWeight, mov='F')
 
+            if (self.validMove(src, self.offRH, -self.offRV)):
+                reverseR =  (x+self.offRH, y-self.offRV, 'W')
+                self.G.add_node(reverseR)
+                self.G.add_edge(src, reverseR, weight=self.bwdTurnWeight, mov='H')
+
+
+            # Starting South
             src =     (x, y, 'S')
+            self.G.add_node(src)
+
             forwards =  (x, y-1, 'S')
+            self.G.add_node(forwards)
+            self.G.add_edge(src, forwards, weight=self.step, mov='W')
+
             reverse =   (x, y+1, 'S')
-            forwardsL = (x+self.offFH, y-self.offFV, 'E')
-            forwardsR = (x-self.offFH, y-self.offFV, 'W')
-            reverseL =  (x+self.offRH, y+self.offRV, 'W')
-            reverseR =  (x-self.offRH, y+self.offRV, 'E')
+            self.G.add_node(reverse)
+            self.G.add_edge(src, reverse, weight=self.step, mov='T')
 
-            friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
+            if (self.validMove(src, self.offFH, -self.offFV)):
+                forwardsL = (x+self.offFH, y-self.offFV, 'E')
+                self.G.add_node(forwardsL)
+                self.G.add_edge(src, forwardsL, weight=self.fwdTurnWeight, mov='A')
+            
+            if (self.validMove(src, -self.offFH, -self.offFV)):
+                forwardsR = (x-self.offFH, y-self.offFV, 'W')
+                self.G.add_node(forwardsR)
+                self.G.add_edge(src, forwardsR, weight=self.fwdTurnWeight, mov='D')
 
-            self.G.add_node(src)
-            self.G.add_nodes_from(friend_nodes)
-            self.G.add_edges_from([(src, i, attrib_dict) for i, attrib_dict in zip(friend_nodes, friend_dicts)])
+            if (self.validMove(src, self.offRH, self.offRV)):
+                reverseL =  (x+self.offRH, y+self.offRV, 'W')
+                self.G.add_node(reverseL)
+                self.G.add_edge(src, reverseL, weight=self.bwdTurnWeight, mov='F')
 
+            if (self.validMove(src, -self.offRH, self.offRV)):
+                reverseR =  (x-self.offRH, y+self.offRV, 'E')
+                self.G.add_node(reverseR)
+                self.G.add_edge(src, reverseR, weight=self.bwdTurnWeight, mov='H')
+
+
+            # Starting East
             src =      (x, y, 'E')
+            self.G.add_node(src)
+
             forwards =  (x+1, y, 'E')
+            self.G.add_node(forwards)
+            self.G.add_edge(src, forwards, weight=self.step, mov='W')
+
             reverse =   (x-1, y, 'E')
-            forwardsL = (x+self.offFV, y+self.offFH, 'N')
-            forwardsR = (x+self.offFV, y-self.offFH, 'S')
-            reverseL =  (x-self.offRV, y+self.offRH, 'S')
-            reverseR =  (x-self.offRV, y-self.offRH, 'N')
+            self.G.add_node(reverse)
+            self.G.add_edge(src, reverse, weight=self.step, mov='T')
 
-            friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
+            if (self.validMove(src, self.offFH, self.offFV)):
+                forwardsL = (x+self.offFV, y+self.offFH, 'N')
+                self.G.add_node(forwardsL)
+                self.G.add_edge(src, forwardsL, weight=self.fwdTurnWeight, mov='A')
+            
+            if (self.validMove(src, self.offFH, -self.offFV)):
+                forwardsR = (x+self.offFV, y-self.offFH, 'S')
+                self.G.add_node(forwardsR)
+                self.G.add_edge(src, forwardsR, weight=self.fwdTurnWeight, mov='D')
 
-            self.G.add_node(src)
-            self.G.add_nodes_from(friend_nodes)
-            self.G.add_edges_from([(src, i, attrib_dict) for i, attrib_dict in zip(friend_nodes, friend_dicts)])
+            if (self.validMove(src, -self.offRH, self.offRV)):
+                reverseL =  (x-self.offRV, y+self.offRH, 'S')
+                self.G.add_node(reverseL)
+                self.G.add_edge(src, reverseL, weight=self.bwdTurnWeight, mov='F')
 
+            if (self.validMove(src, -self.offRH, -self.offRV)):
+                reverseR =  (x-self.offRV, y-self.offRH, 'N')
+                self.G.add_node(reverseR)
+                self.G.add_edge(src, reverseR, weight=self.bwdTurnWeight, mov='H')
+
+            
+            # Starting West
             src =     (x, y, 'W')
-            forwards =  (x-1, y, 'W')
-            reverse =   (x+1, y, 'W')
-            forwardsL = (x-self.offFV, y-self.offFH, 'S')
-            forwardsR = (x-self.offFV, y+self.offFH, 'N')
-            reverseL =  (x+self.offRV, y-self.offRH, 'N')
-            reverseR =  (x+self.offRV, y+self.offRH, 'S')
-
-            friend_nodes = [forwards, reverse, forwardsL, forwardsR, reverseL, reverseR]
-            friend_dicts = [dict(weight=weight, mov=mov) for weight, mov in zip(weights, moves)]
-
             self.G.add_node(src)
-            self.G.add_nodes_from(friend_nodes)
-            self.G.add_edges_from([(src, i, attrib_dict) for i, attrib_dict in zip(friend_nodes, friend_dicts)])
+
+            forwards =  (x-1, y, 'W')
+            self.G.add_node(forwards)
+            self.G.add_edge(src, forwards, weight=self.step, mov='W')
+
+            reverse =   (x+1, y, 'W')
+            self.G.add_node(reverse)
+            self.G.add_edge(src, reverse, weight=self.step, mov='T')
+
+            if (self.validMove(src, -self.offFH, -self.offFV)):
+                forwardsL = (x-self.offFV, y-self.offFH, 'S')
+                self.G.add_node(forwardsL)
+                self.G.add_edge(src, forwardsL, weight=self.fwdTurnWeight, mov='A')
+            
+            if (self.validMove(src, -self.offFH, self.offFV)):
+                forwardsR = (x-self.offFV, y+self.offFH, 'N')
+                self.G.add_node(forwardsR)
+                self.G.add_edge(src, forwardsR, weight=self.fwdTurnWeight, mov='D')
+
+            if (self.validMove(src, self.offRH, -self.offRV)):
+                reverseL =  (x+self.offRV, y-self.offRH, 'N')
+                self.G.add_node(reverseL)
+                self.G.add_edge(src, reverseL, weight=self.bwdTurnWeight, mov='F')
+
+            if (self.validMove(src, self.offRH, self.offRV)):
+                reverseR =  (x+self.offRV, y+self.offRH, 'S')
+                self.G.add_node(reverseR)
+                self.G.add_edge(src, reverseR, weight=self.bwdTurnWeight, mov='H')
 
 
     # Removing any cells that should not be accessible (Obstacle/Boundary)
@@ -122,7 +244,7 @@ class AStar:
             # 20x20 grid (Each grid is 10x10)
             else:
                 for ox, oy in self.obstacles:
-                    if (x >= ox - 1 and x <= ox + 2) and (y >= oy - 1 and y <= oy + 2):
+                    if (x >= ox - 1 and x <= ox + 1) and (y >= oy - 1 and y <= oy + 1):
                         remList.append(node)
 
                 if x < 1 or y < 1 or x > 18 or y > 18:

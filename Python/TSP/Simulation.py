@@ -14,9 +14,9 @@ tsp = TSP(
         offRH=2,
         distCalType=2
     )
-tsp.testObstacles(8)
+tsp.testObstacles(3)
 
-res = tsp.run()
+res = tsp.run(False)
 
 if res:
     paths = tsp.getCommands()

@@ -73,8 +73,8 @@ class TSP:
     def expectedPos(self, obstacle):
         ax, ay, obsOrient = obstacle
 
-        if obsOrient == 'N': ay += 3
-        elif obsOrient == 'E': ax += 3
+        if obsOrient == 'N': ay += 2
+        elif obsOrient == 'E': ax += 2
         elif obsOrient == 'S': ay -= 2
         else: ax -= 2
         
@@ -220,6 +220,40 @@ class TSP:
         # ])
         # permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
         return (permutation, distance)
+
+
+    def calcHami(self):
+        visited, dist, pi, s = [], [], [], []
+        for _ in range(len(self.aStarDist)):
+            visited.append(0)
+            dist.append(float('inf'))
+            pi.append(None)
+        
+        # Dist from src to src = 0
+        dist[0] = 0
+
+        while not all(visited):
+            minDist = float('inf')
+            minNode = 99
+
+            # Find next shortest node
+            for i in range(len(visited)):
+                if not visited[i] and minDist > dist[i]:
+                    minDist = dist[i]
+                    minNode = i
+            
+            # Update minNode
+            visited[minNode] = True
+            s.append(minNode)
+
+            # Update neighbours
+            for i in range(len(visited)):
+                if not visited[i] and dist[i] > (dist[minNode] + self.aStarDist[minNode][i]):
+                    dist[i] = dist[minNode] + self.aStarDist[minNode][i]
+                    pi[i] = minNode
+
+        print(sum(dist))
+        return s, sum(dist)
 
 
     # Displays paths selected to complete Hamiltonian cycle (Simulation)
@@ -398,8 +432,12 @@ class TSP:
         return fullPath
 
 
-    def generateCommandsAStar(self, seq, num):
-        index = [(i, (i+1)%num) for i in range(num)]
+    def generateCommandsAStar(self, seq, num, flag):
+        if flag:
+            index = [(i, (i+1)%num) for i in range(num)]
+        else:
+            index = [(i, (i+1)) for i in range(num-1)]
+
         fullPath = []
 
         for start, end in index:
@@ -459,14 +497,15 @@ class TSP:
 
 
     # Main driver function
-    def run(self):
+    def run(self, tspFlag=True):
         res = False
         if self.distCalType == 1:
             res = self.calcDubins(1)
         elif self.distCalType == 2:
             res = self.calAStar()
 
-        if res: sequence, finalDist = self.calcTSP()
+        if res and tspFlag: sequence, finalDist = self.calcTSP()
+        elif res and tspFlag is False: sequence, finalDist = self.calcHami()
         else: 
             print('No valid path available')
             return False
@@ -477,7 +516,7 @@ class TSP:
         elif self.distCalType == 1:
             self.commands = self.generateCommandsDubins(sequence, len(sequence))
         else:
-            self.commands = self.generateCommandsAStar(sequence, len(sequence))
+            self.commands = self.generateCommandsAStar(sequence, len(sequence), tspFlag)
 
         # for cmd in self.commands:
         #     print('=========New Path=========')
