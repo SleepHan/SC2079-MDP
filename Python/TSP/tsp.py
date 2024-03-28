@@ -73,10 +73,10 @@ class TSP:
     def expectedPos(self, obstacle):
         ax, ay, obsOrient = obstacle
 
-        if obsOrient == 'N': ay += 2
-        elif obsOrient == 'E': ax += 2
-        elif obsOrient == 'S': ay -= 2
-        else: ax -= 2
+        if obsOrient == 'N': ay += 3
+        elif obsOrient == 'E': ax += 3
+        elif obsOrient == 'S': ay -= 3
+        else: ax -= 3
         
         orient = robotPositions[obsOrient]
         finalPosRad = (ax*self.coorCorrection, ay*self.coorCorrection, directions[orient])
@@ -195,8 +195,20 @@ class TSP:
 
         self.aStarDist = [[path[0] for path in node] for node in self.aStarPath]
 
-        if any(all(x == float('inf') for x in paths) for paths in self.aStarDist):
-            return False
+        remove = []
+        for i in range(len(self.aStarDist)):
+            if all(x == float('inf') for x in self.aStarDist[i]):
+                remove.append(i)
+            
+        if len(remove) == len(self.aStarDist): return False
+
+        for i in remove[::-1]: 
+            self.aStarDist.pop(i)
+            self.aStarPath.pop(i)
+            self.obstacleList.pop(i-1)
+            for j in range(len(self.aStarDist)):
+                self.aStarDist[j].pop(i)
+                self.aStarPath[j].pop(i)
 
         return True
 
@@ -243,14 +255,15 @@ class TSP:
                     minNode = i
             
             # Update minNode
-            visited[minNode] = True
-            s.append(minNode)
+            if minNode != 99:
+                visited[minNode] = True
+                s.append(minNode)
 
-            # Update neighbours
-            for i in range(len(visited)):
-                if not visited[i] and dist[i] > (dist[minNode] + self.aStarDist[minNode][i]):
-                    dist[i] = dist[minNode] + self.aStarDist[minNode][i]
-                    pi[i] = minNode
+                # Update neighbours
+                for i in range(len(visited)):
+                    if not visited[i] and dist[i] > (dist[minNode] + self.aStarDist[minNode][i]):
+                        dist[i] = dist[minNode] + self.aStarDist[minNode][i]
+                        pi[i] = minNode
 
         print(sum(dist))
         return s, sum(dist)
@@ -485,6 +498,8 @@ class TSP:
             obstacles = [(15, 2, 'W'), (1, 16, 'E'), (8, 5, 'N'), (19, 9, 'W'), (5, 12, 'S'), (11, 14, 'W'), (16, 19, 'S'), (10, 9, 'W')]
         elif choice == 8:
             obstacles = [(3, 16, 'W'), (4, 10, 'S'), (8, 5, 'N'), (10, 9, 'W'), (12, 15, 'E'), (15, 4, 'W'), (19, 8, 'W'), (18, 19, 'S')]
+        elif choice == 9:
+            obstacles = [(1, 7, 'N'), (3, 13, 'S'), (6, 13, 'N'), (18, 18, 'W'), (18, 9, 'W'), (14, 5, 'S'), (10, 9, 'E'), (10, 18, 'E')]
         else:
             obstacles = [(10, 10, 'N'), (10, 10, 'S'), (10, 10, 'E'), (10, 10, 'W')]
 

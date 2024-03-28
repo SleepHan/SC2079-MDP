@@ -43,7 +43,7 @@ class AStar:
         invalid = []
         for obs in self.obstacles:
             x, y = obs
-            invalid += [(x+offX, y+offY) for offX in range(-1, 2) for offY in range(-1, 2)]
+            invalid += [(x+offX, y+offY) for offX in range(-1, 1) for offY in range(-1, 1)]
 
         return invalid
 
@@ -55,7 +55,7 @@ class AStar:
         # E/W -> Update X-coor -> Update Y-coor
         x, y, face = node
         traversed = [(x, y)]
-        if face in ['N', 'Y']:
+        if face in ['N', 'S']:
             if yMove > 0:
                 for offY in range(1, yMove+1):
                     traversed.append((x, y+offY))
@@ -88,6 +88,7 @@ class AStar:
         #     print('INVALID')
         #     return False
         # return True
+
         return not any(bad in traversed for bad in self.invalid)
 
 
